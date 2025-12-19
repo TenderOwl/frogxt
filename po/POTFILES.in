@@ -1,0 +1,6 @@
+# List of source files containing translatable strings.
+# Please keep this file sorted alphabetically.
+data/com.tenderowl.frog.desktop.in
+data/com.tenderowl.frog.metainfo.xml.in
+data/com.tenderowl.frog.gschema.xml
+src/window.ui

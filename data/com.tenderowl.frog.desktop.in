@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=frogxt
+Exec=frogxt
+Icon=com.tenderowl.frog
+Terminal=false
+Type=Application
+Categories=Utility;
+Keywords=GTK;
+StartupNotify=true
+DBusActivatable=true
