@@ -1,7 +1,16 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <gresources>
   <gresource prefix="/com/tenderowl/frog">
     <file preprocess="xml-stripblanks">ui/window.ui</file>
+    <file preprocess="xml-stripblanks">ui/welcome-page.ui</file>
     <file preprocess="xml-stripblanks">ui/shortcuts-dialog.ui</file>
+    <file preprocess="xml-stripblanks">ui/extracted-page.ui</file>
+    <file preprocess="xml-stripblanks">ui/language-popover.ui</file>
+    <file preprocess="xml-stripblanks">ui/language-popover_row.ui</file>
+    <file preprocess="xml-stripblanks">ui/language-row.ui</file>
+    <file preprocess="xml-stripblanks">ui/preferences-dialog.ui</file>
+    <file preprocess="xml-stripblanks">ui/preferences-general.ui</file>
+    <file preprocess="xml-stripblanks">ui/preferences-languages.ui</file>
+    <file preprocess="xml-stripblanks">ui/share-row.ui</file>
   </gresource>
 </gresources>

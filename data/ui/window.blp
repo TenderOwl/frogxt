@@ -1,31 +1,27 @@
 using Gtk 4.0;
 using Adw 1;
 
-template $FrogxtWindow: Adw.ApplicationWindow {
-  title: _("FrogXT");
-  default-width: 800;
-  default-height: 600;
+template $FrogWindow: Adw.ApplicationWindow {
+  default-width: 480;
+  default-height: 480;
+  width-request: 360;
+  height-request: 360;
 
-  content: Adw.ToolbarView {
-    [top]
-    Adw.HeaderBar {
-      [end]
-      MenuButton {
-        primary: true;
-        icon-name: "open-menu-symbolic";
-        tooltip-text: _("Main Menu");
-        menu-model: primary_menu;
+  [content]
+  Adw.ToastOverlay toast_overlay {
+    Adw.NavigationSplitView split_view {
+      collapsed: true;
+
+      [sidebar]
+      $WelcomePage welcome_page {
+        name: "welcome";
+      }
+
+      $ExtractedPage extracted_page {
+        name: "extracted";
       }
     }
-
-    content: Label label {
-      label: _("Hello, World!");
-
-      styles [
-        "title-1",
-      ]
-    };
-  };
+  }
 }
 
 menu primary_menu {

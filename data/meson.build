@@ -3,7 +3,16 @@ gnome = import('gnome')
 blueprints = custom_target(
   'blueprints',
   input: files(
+    'ui/extracted-page.blp',
+    'ui/language-popover.blp',
+    'ui/language-popover_row.blp',
+    'ui/language-row.blp',
+    'ui/preferences-dialog.blp',
+    'ui/preferences-general.blp',
+    'ui/preferences-languages.blp',
+    'ui/share-row.blp',
     'ui/shortcuts-dialog.blp',
+    'ui/welcome-page.blp',
     'ui/window.blp',
   ),
   output: '.',
