@@ -23,13 +23,16 @@
  * SPDX-License-Identifier: MIT
  */
 
-use gettextrs::gettext;
+use std::str::FromStr;
+
 use adw::prelude::*;
 use adw::subclass::prelude::*;
+use gettextrs::gettext;
+use gtk::glib::property::PropertyGet;
 use gtk::{gio, glib};
 
 use crate::config::VERSION;
-use crate::FrogxtWindow;
+use crate::FrogWindow;
 
 mod imp {
     use super::*;
@@ -62,7 +65,7 @@ mod imp {
             let application = self.obj();
             // Get the current window or create one if necessary
             let window = application.active_window().unwrap_or_else(|| {
-                let window = FrogxtWindow::new(&*application);
+                let window = FrogWindow::new(&*application);
                 window.upcast()
             });
 
@@ -97,13 +100,21 @@ impl FrogxtApplication {
         let about_action = gio::ActionEntry::builder("about")
             .activate(move |app: &Self, _, _| app.show_about())
             .build();
-        self.add_action_entries([quit_action, about_action]);
+        let toast_action = gio::ActionEntry::builder("toast")
+            .parameter_type(Some(glib::VariantTy::STRING))
+            .activate(move |app: &Self, _, arg| {
+                if let Some(message) = arg.expect("Could not get parameter.").get::<String>() {
+                    app.show_toast(&message);
+                }
+            })
+            .build();
+        self.add_action_entries([quit_action, about_action, toast_action]);
     }
 
     fn show_about(&self) {
         let window = self.active_window().unwrap();
         let about = adw::AboutDialog::builder()
-            .application_name("frogxt")
+            .application_name("frog")
             .application_icon("com.tenderowl.frog")
             .developer_name("Andrey Maksimov")
             .version(VERSION)
@@ -114,5 +125,11 @@ impl FrogxtApplication {
             .build();
 
         about.present(Some(&window));
+    }
+
+    fn show_toast(&self, message: &str) {
+        if let Some(window) = self.active_window() {
+            window.downcast::<FrogWindow>().unwrap().show_toast(message);
+        }
     }
 }

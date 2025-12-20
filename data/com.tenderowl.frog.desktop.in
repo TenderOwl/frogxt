@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=frogxt
-Exec=frogxt
+Name=frog
+Exec=frog
 Icon=com.tenderowl.frog
 Terminal=false
 Type=Application

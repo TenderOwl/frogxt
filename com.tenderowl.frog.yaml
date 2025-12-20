@@ -4,7 +4,7 @@ runtime-version: "49"
 sdk: "org.gnome.Sdk"
 sdk-extensions:
   - "org.freedesktop.Sdk.Extension.rust-stable"
-command: "frogxt"
+command: "frog"
 finish-args:
   - "--share=network"
   - "--share=ipc"
@@ -17,7 +17,7 @@ build-options:
     - "--share=network"
   env:
     RUST_BACKTRACE: "1"
-    RUST_LOG: "frogxt=debug"
+    RUST_LOG: "frog=debug"
 cleanup:
   - "/include"
   - "/lib/pkgconfig"
@@ -29,7 +29,7 @@ cleanup:
   - "*.la"
   - "*.a"
 modules:
-  - name: "frogxt"
+  - name: "frog"
     builddir: true
     buildsystem: "meson"
     sources:

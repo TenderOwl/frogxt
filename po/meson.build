@@ -1,1 +1,1 @@
-i18n.gettext('frogxt', preset: 'glib')
+i18n.gettext('frog', preset: 'glib')

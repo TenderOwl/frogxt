@@ -23,25 +23,33 @@
  * SPDX-License-Identifier: MIT
  */
 
-use gtk::prelude::*;
 use adw::subclass::prelude::*;
+use gtk::prelude::*;
 use gtk::{gio, glib};
 
 mod imp {
+    use crate::welcome_page::WelcomePage;
+
     use super::*;
 
     #[derive(Debug, Default, gtk::CompositeTemplate)]
     #[template(resource = "/com/tenderowl/frog/ui/window.ui")]
-    pub struct FrogxtWindow {
+    pub struct FrogWindow {
         // Template widgets
         #[template_child]
-        pub label: TemplateChild<gtk::Label>,
+        pub toast_overlay: TemplateChild<adw::ToastOverlay>,
+
+        #[template_child]
+        pub split_view: TemplateChild<adw::NavigationSplitView>,
+
+        #[template_child]
+        pub welcome_page: TemplateChild<WelcomePage>,
     }
 
     #[glib::object_subclass]
-    impl ObjectSubclass for FrogxtWindow {
-        const NAME: &'static str = "FrogxtWindow";
-        type Type = super::FrogxtWindow;
+    impl ObjectSubclass for FrogWindow {
+        const NAME: &'static str = "FrogWindow";
+        type Type = super::FrogWindow;
         type ParentType = adw::ApplicationWindow;
 
         fn class_init(klass: &mut Self::Class) {
@@ -53,22 +61,28 @@ mod imp {
         }
     }
 
-    impl ObjectImpl for FrogxtWindow {}
-    impl WidgetImpl for FrogxtWindow {}
-    impl WindowImpl for FrogxtWindow {}
-    impl ApplicationWindowImpl for FrogxtWindow {}
-    impl AdwApplicationWindowImpl for FrogxtWindow {}
+    impl ObjectImpl for FrogWindow {}
+    impl WidgetImpl for FrogWindow {}
+    impl WindowImpl for FrogWindow {}
+    impl ApplicationWindowImpl for FrogWindow {}
+    impl AdwApplicationWindowImpl for FrogWindow {}
 }
 
 glib::wrapper! {
-    pub struct FrogxtWindow(ObjectSubclass<imp::FrogxtWindow>)
-        @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, adw::ApplicationWindow,        @implements gio::ActionGroup, gio::ActionMap;
+    pub struct FrogWindow(ObjectSubclass<imp::FrogWindow>)
+        @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, adw::ApplicationWindow,
+        @implements gio::ActionGroup, gtk::ShortcutManager, gtk::ConstraintTarget, gio::ActionMap, gtk::Accessible, gtk::Buildable, gtk::Root, gtk::Native;
 }
 
-impl FrogxtWindow {
+impl FrogWindow {
     pub fn new<P: IsA<gtk::Application>>(application: &P) -> Self {
         glib::Object::builder()
             .property("application", application)
             .build()
+    }
+
+    pub fn show_toast(&self, message: &str) {
+        let toast = adw::Toast::new(message);
+        self.imp().toast_overlay.add_toast(toast);
     }
 }

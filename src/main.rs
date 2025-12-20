@@ -25,15 +25,17 @@
 
 mod application;
 mod config;
+mod language_popover;
+mod welcome_page;
 mod window;
 
 use self::application::FrogxtApplication;
-use self::window::FrogxtWindow;
+use self::window::FrogWindow;
 
 use config::{GETTEXT_PACKAGE, LOCALEDIR, PKGDATADIR};
 use gettextrs::{bind_textdomain_codeset, bindtextdomain, textdomain};
-use gtk::{gio, glib};
 use gtk::prelude::*;
+use gtk::{gio, glib};
 
 fn main() -> glib::ExitCode {
     // Set up gettext translations
@@ -43,7 +45,7 @@ fn main() -> glib::ExitCode {
     textdomain(GETTEXT_PACKAGE).expect("Unable to switch to the text domain");
 
     // Load resources
-    let resources = gio::Resource::load(PKGDATADIR.to_owned() + "/frogxt.gresource")
+    let resources = gio::Resource::load(PKGDATADIR.to_owned() + "/frog.gresource")
         .expect("Could not load resources");
     gio::resources_register(&resources);
 

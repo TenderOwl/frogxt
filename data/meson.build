@@ -27,8 +27,8 @@ blueprints = custom_target(
 )
 
 gnome.compile_resources(
-  'frogxt',
-  'frogxt.gresource.xml',
+  'frog',
+  'frog.gresource.xml',
   dependencies: blueprints,
   gresource_bundle: true,
   install: true,
