@@ -28,7 +28,7 @@ use gtk::prelude::*;
 use gtk::{gio, glib};
 
 mod imp {
-    use crate::welcome_page::WelcomePage;
+    use crate::{extracted_page::ExtractedPage, welcome_page::WelcomePage};
 
     use super::*;
 
@@ -44,6 +44,9 @@ mod imp {
 
         #[template_child]
         pub welcome_page: TemplateChild<WelcomePage>,
+
+        #[template_child]
+        pub extracted_page: TemplateChild<ExtractedPage>,
     }
 
     #[glib::object_subclass]

@@ -25,6 +25,7 @@
 
 mod application;
 mod config;
+mod extracted_page;
 mod language_popover;
 mod welcome_page;
 mod window;
