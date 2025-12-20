@@ -24,10 +24,15 @@
  */
 
 use adw::subclass::prelude::*;
+use gio::Settings;
 use gtk::prelude::*;
 use gtk::{gio, glib};
 
+use crate::config::APP_ID;
+
 mod imp {
+    use std::cell::OnceCell;
+
     use crate::{extracted_page::ExtractedPage, welcome_page::WelcomePage};
 
     use super::*;
@@ -35,6 +40,7 @@ mod imp {
     #[derive(Debug, Default, gtk::CompositeTemplate)]
     #[template(resource = "/com/tenderowl/frog/ui/window.ui")]
     pub struct FrogWindow {
+        pub settings: OnceCell<Settings>,
         // Template widgets
         #[template_child]
         pub toast_overlay: TemplateChild<adw::ToastOverlay>,
@@ -64,9 +70,26 @@ mod imp {
         }
     }
 
-    impl ObjectImpl for FrogWindow {}
+    impl ObjectImpl for FrogWindow {
+        fn constructed(&self) {
+            self.parent_constructed();
+            // Load latest window state
+            let obj = self.obj();
+            obj.setup_settings();
+            obj.load_window_size();
+        }
+    }
     impl WidgetImpl for FrogWindow {}
-    impl WindowImpl for FrogWindow {}
+    impl WindowImpl for FrogWindow {
+        fn close_request(&self) -> glib::Propagation {
+            // Save window size
+            self.obj()
+                .save_window_size()
+                .expect("Failed to save window state");
+            // Allow to invoke other event handlers
+            glib::Propagation::Proceed
+        }
+    }
     impl ApplicationWindowImpl for FrogWindow {}
     impl AdwApplicationWindowImpl for FrogWindow {}
 }
@@ -87,5 +110,48 @@ impl FrogWindow {
     pub fn show_toast(&self, message: &str) {
         let toast = adw::Toast::new(message);
         self.imp().toast_overlay.add_toast(toast);
+    }
+
+    fn setup_settings(&self) {
+        let settings = Settings::new(APP_ID);
+        self.imp()
+            .settings
+            .set(settings)
+            .expect("`settings` should not be set before calling `setup_settings`.");
+    }
+
+    fn settings(&self) -> &Settings {
+        self.imp()
+            .settings
+            .get()
+            .expect("`settings` should be set in `setup_settings`.")
+    }
+
+    pub fn save_window_size(&self) -> Result<(), glib::BoolError> {
+        // Get the size of the window
+        let size = self.default_size();
+
+        // Set the window state in `settings`
+        self.settings().set_int("window-width", size.0)?;
+        self.settings().set_int("window-height", size.1)?;
+        self.settings()
+            .set_boolean("is-maximized", self.is_maximized())?;
+
+        Ok(())
+    }
+
+    fn load_window_size(&self) {
+        // Get the window state from `settings`
+        let width = self.settings().int("window-width");
+        let height = self.settings().int("window-height");
+        let is_maximized = self.settings().boolean("is-maximized");
+
+        // Set the size of the window
+        self.set_default_size(width, height);
+
+        // If the window was maximized when it was closed, maximize it again
+        if is_maximized {
+            self.maximize();
+        }
     }
 }
