@@ -45,6 +45,7 @@ template $WelcomePage: Adw.NavigationPage {
     }
 
     Adw.StatusPage welcome {
+      icon-name: "com.tenderowl.frog";
       title: "Frog";
       description: _("Extract text from anywhere");
 
@@ -55,7 +56,7 @@ template $WelcomePage: Adw.NavigationPage {
           orientation: vertical;
 
           Button {
-            action-name: "app.get_screenshot";
+            action-name: "app.screenshot";
             tooltip-text: C_("Welcome screen", "Take a Screenshot");
 
             styles [

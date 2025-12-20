@@ -94,12 +94,15 @@ impl FrogxtApplication {
     }
 
     fn setup_gactions(&self) {
+        // Quit
         let quit_action = gio::ActionEntry::builder("quit")
             .activate(move |app: &Self, _, _| app.quit())
             .build();
+        // About
         let about_action = gio::ActionEntry::builder("about")
             .activate(move |app: &Self, _, _| app.show_about())
             .build();
+        // Toast
         let toast_action = gio::ActionEntry::builder("toast")
             .parameter_type(Some(glib::VariantTy::STRING))
             .activate(move |app: &Self, _, arg| {
@@ -108,7 +111,18 @@ impl FrogxtApplication {
                 }
             })
             .build();
-        self.add_action_entries([quit_action, about_action, toast_action]);
+        // Take Screenshot
+        let screenshot_action = gio::ActionEntry::builder("screenshot")
+            .activate(move |app: &Self, _, _| app.take_screenshot())
+            .build();
+
+        // Set keyboard shortcusts
+        self.set_accels_for_action(
+            format!("app.{}", screenshot_action.name()).as_str(),
+            &[&"<Primary>g"],
+        );
+        // Add actions
+        self.add_action_entries([quit_action, about_action, toast_action, screenshot_action]);
     }
 
     fn show_about(&self) {
@@ -131,5 +145,10 @@ impl FrogxtApplication {
         if let Some(window) = self.active_window() {
             window.downcast::<FrogWindow>().unwrap().show_toast(message);
         }
+    }
+
+    fn take_screenshot(&self) {
+        println!("Taking screenshot");
+        // Implement screenshot functionality here by utilizing Portals and ASHPD
     }
 }
