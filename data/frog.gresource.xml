@@ -16,5 +16,6 @@
     <file>icons/scalable/actions/camera-symbolic.svg</file>
     <file>icons/scalable/actions/open-folder-symbolic.svg</file>
     <file>icons/scalable/actions/clipboard-symbolic.svg</file>
+    <file>icons/scalable/actions/share-symbolic.svg</file>
   </gresource>
 </gresources>

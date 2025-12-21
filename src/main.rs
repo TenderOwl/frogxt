@@ -39,8 +39,26 @@ use config::{GETTEXT_PACKAGE, LOCALEDIR, PKGDATADIR};
 use gettextrs::{bind_textdomain_codeset, bindtextdomain, textdomain};
 use gtk::prelude::*;
 use gtk::{gio, glib};
+use tracing::level_filters::LevelFilter;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::Layer;
 
 fn main() -> glib::ExitCode {
+    let mut layers = Vec::new();
+    let filter = tracing_subscriber::EnvFilter::builder()
+        .with_default_directive(LevelFilter::DEBUG.into())
+        .from_env_lossy();
+    let stdout_layer = tracing_subscriber::fmt::layer()
+        .compact()
+        .with_ansi(true)
+        .boxed();
+    layers.push(stdout_layer);
+    tracing_subscriber::Registry::default()
+        .with(filter)
+        .with(layers)
+        .init();
+
     // Set up gettext translations
     bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR).expect("Unable to bind the text domain");
     bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8")

@@ -25,7 +25,7 @@
 
 use adw::subclass::prelude::*;
 use gio::Settings;
-use gtk::prelude::*;
+use gtk::{gdk, prelude::*};
 use gtk::{gio, glib};
 
 use crate::config::APP_ID;
@@ -153,5 +153,18 @@ impl FrogWindow {
         if is_maximized {
             self.maximize();
         }
+    }
+
+    pub fn show_extracted_page(&self) {
+        self.imp().split_view.set_show_content(true);
+    }
+
+    pub fn show_welcome_page(&self) {
+        self.imp().split_view.set_show_content(false);
+    }
+
+    pub fn begin_extracting_texture(&self, _texture: Option<gdk::Texture>) {
+        // self.imp().extracted_texture = Some(texture);
+        self.show_extracted_page();
     }
 }

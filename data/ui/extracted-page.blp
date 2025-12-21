@@ -23,7 +23,7 @@ template $ExtractedPage : Adw.NavigationPage {
       Adw.SplitButton grab_btn {
         action-name: "app.get_screenshot";
         tooltip-text: _("Take a screenshot");
-        icon-name: "camera-photo-symbolic";
+        icon-name: "camera-symbolic";
         menu-model: grab_menu;
       }
 
@@ -31,7 +31,7 @@ template $ExtractedPage : Adw.NavigationPage {
       Button text_copy_btn {
         action-name: "app.copy_to_clipboard";
         tooltip-text: C_("Extracted screen", "Copy extracted text to clipboard");
-        icon-name: "edit-copy-symbolic";
+        icon-name: "clipboard-symbolic";
       }
 
       // [start]
@@ -56,14 +56,14 @@ template $ExtractedPage : Adw.NavigationPage {
 
       [end]
       MenuButton {
-        icon-name: "open-menu-symbolic";
+        icon-name: "menu-symbolic";
         tooltip-text: C_("Extracted screen", "Open menu");
         menu-model: primary_menu;
       }
 
       [end]
       MenuButton share_button {
-        icon-name: "emblem-shared-symbolic";
+        icon-name: "share-symbolic";
         tooltip-text: C_("Extracted screen", "Share To");
         popover: Popover {
 

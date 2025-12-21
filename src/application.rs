@@ -23,13 +23,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-use std::str::FromStr;
-
-use adw::prelude::*;
-use adw::subclass::prelude::*;
+use adw::{prelude::*, subclass::prelude::*};
+use ashpd::{desktop::screenshot, WindowIdentifier};
 use gettextrs::gettext;
-use gtk::glib::property::PropertyGet;
-use gtk::{gio, glib};
+use gtk::glib::clone;
+use gtk::{gdk, gio, glib};
 
 use crate::config::VERSION;
 use crate::FrogWindow;
@@ -86,6 +84,7 @@ glib::wrapper! {
 
 impl FrogxtApplication {
     pub fn new(application_id: &str, flags: &gio::ApplicationFlags) -> Self {
+        tracing::debug!("Setting up application with id '{}'", application_id);
         glib::Object::builder()
             .property("application-id", application_id)
             .property("flags", flags)
@@ -116,13 +115,37 @@ impl FrogxtApplication {
             .activate(move |app: &Self, _, _| app.take_screenshot())
             .build();
 
+        let open_image_action = gio::ActionEntry::builder("open-file")
+            .activate(move |app: &Self, _, _| app.select_file())
+            .build();
+
+        let paste_from_clipboard_action = gio::ActionEntry::builder("paste-from-clipboard")
+            .activate(move |app: &Self, _, _| app.paste_from_clipboard())
+            .build();
+
         // Set keyboard shortcusts
         self.set_accels_for_action(
             format!("app.{}", screenshot_action.name()).as_str(),
             &[&"<Primary>g"],
         );
+        self.set_accels_for_action(
+            format!("app.{}", open_image_action.name()).as_str(),
+            &[&"<Primary>o"],
+        );
+        self.set_accels_for_action(
+            format!("app.{}", paste_from_clipboard_action.name()).as_str(),
+            &[&"<Primary>v"],
+        );
+
         // Add actions
-        self.add_action_entries([quit_action, about_action, toast_action, screenshot_action]);
+        self.add_action_entries([
+            quit_action,
+            about_action,
+            toast_action,
+            screenshot_action,
+            open_image_action,
+            paste_from_clipboard_action,
+        ]);
     }
 
     fn show_about(&self) {
@@ -148,7 +171,136 @@ impl FrogxtApplication {
     }
 
     fn take_screenshot(&self) {
-        println!("Taking screenshot");
-        // Implement screenshot functionality here by utilizing Portals and ASHPD
+        tracing::info!("begin taking screenshot");
+
+        if let Some(window) = self.active_window() {
+            // Implement screenshot functionality here by utilizing Portals and ASHPD
+            glib::spawn_future_local(clone!(
+                #[weak]
+                window,
+                async move {
+                    // let root = window.native().unwrap();
+                    // let identifier = WindowIdentifier::from_native(&root).await;
+                    // let path = std::env::temp_dir().join("frog_screenshot.png");
+                    tracing::info!("send screenshot request");
+
+                    match screenshot::ScreenshotRequest::default()
+                        // .identifier(identifier)
+                        .interactive(true)
+                        .modal(false)
+                        .send()
+                        .await
+                        .and_then(|r| r.response())
+                    {
+                        Ok(response) => {
+                            let file = gio::File::for_uri(response.uri().as_str());
+                            tracing::info!(
+                                "Screenshot saved to {}",
+                                file.path().unwrap_or_default().display()
+                            );
+
+                            window
+                                .downcast_ref::<FrogWindow>()
+                                .expect("Failed to downcast to FrogWindow")
+                                .show_extracted_page();
+                        }
+                        Err(err) => {
+                            tracing::error!("Failed to take a screenshot {err}");
+                        }
+                    }
+
+                    tracing::info!("Window show");
+                    window.set_visible(true);
+                }
+            ));
+
+            glib::idle_add_local_full(
+                glib::Priority::HIGH,
+                clone!(
+                    #[weak]
+                    window,
+                    #[upgrade_or]
+                    glib::ControlFlow::Break,
+                    move || {
+                        window.set_visible(false);
+                        tracing::info!("Window hide");
+                        glib::ControlFlow::Break
+                    }
+                ),
+            );
+            tracing::info!("end taking screenshot");
+            while glib::MainContext::default().pending() {
+                glib::MainContext::default().iteration(false);
+            }
+        }
+    }
+
+    fn select_file(&self) {
+        let filter = gtk::FileFilter::new();
+        filter.set_name(Some("Images"));
+        filter.add_mime_type("image/*");
+
+        let dialog = gtk::FileDialog::builder()
+            .title("Open image")
+            .accept_label("Select")
+            .default_filter(&filter)
+            .build();
+
+        let window = match self.active_window() {
+            Some(window) => window,
+            None => return,
+        };
+
+        dialog.open(
+            Some(&window),
+            gio::Cancellable::NONE,
+            glib::clone!(
+                #[weak(rename_to=app)]
+                self,
+                move |file| {
+                    if let Ok(file) = file {
+                        app.on_select_file(file);
+                    }
+                }
+            ),
+        );
+    }
+
+    fn on_select_file(&self, result: gio::File) {
+        let filepath = result.path().expect("Failed to get file path");
+        tracing::info!("File selected: {}", filepath.display());
+        if let Some(window) = self.active_window() {
+            window
+                .downcast::<FrogWindow>()
+                .expect("Failed to downcast to FrogWindow")
+                .show_extracted_page();
+        }
+    }
+
+    fn paste_from_clipboard(&self) {
+        let display = gdk::Display::default().expect("Failed to get default display");
+        let clipboard = display.clipboard();
+
+        let window = match self.active_window() {
+            Some(window) => window,
+            None => return,
+        };
+
+        clipboard.read_texture_async(
+            gio::Cancellable::NONE,
+            glib::clone!(
+                #[weak]
+                window,
+                move |texture| {
+                    tracing::info!("Texture read from clipboard: {:?}", texture);
+                    if let Ok(texture) = texture {
+                        window
+                            .downcast_ref::<FrogWindow>()
+                            .expect("Failed to downcast to FrogWindow")
+                            .begin_extracting_texture(texture);
+                    }
+                }
+            ),
+        );
     }
 }
