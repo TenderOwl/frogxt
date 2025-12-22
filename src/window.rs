@@ -167,4 +167,9 @@ impl FrogWindow {
         // self.imp().extracted_texture = Some(texture);
         self.show_extracted_page();
     }
+
+    pub fn show_extracted_text(&self, text: String) {
+        self.imp().extracted_page.set_text(text);
+        self.show_extracted_page();
+    }
 }

@@ -1,14 +1,12 @@
 using Gtk 4.0;
 using Adw 1;
 
-template $ExtractedPage : Adw.NavigationPage {
+template $ExtractedPage: Adw.NavigationPage {
   title: "Extracted";
 
   Adw.ToolbarView {
-
     [top]
     Adw.HeaderBar headerbar {
-
       [title]
       Label {}
 
@@ -21,7 +19,7 @@ template $ExtractedPage : Adw.NavigationPage {
 
       [start]
       Adw.SplitButton grab_btn {
-        action-name: "app.get_screenshot";
+        action-name: "app.screenshot";
         tooltip-text: _("Take a screenshot");
         icon-name: "camera-symbolic";
         menu-model: grab_menu;
@@ -40,7 +38,6 @@ template $ExtractedPage : Adw.NavigationPage {
       //   tooltip-text: C_("Extracted screen", "Listen to text");
       //   icon-name: "audio-speakers-symbolic";
       // }
-
       // [start]
       // Button listen_cancel_btn {
       //   action-name: "app.listen_cancel";
@@ -48,7 +45,6 @@ template $ExtractedPage : Adw.NavigationPage {
       //   icon-name: "media-playback-stop-symbolic";
       //   visible: false;
       // }
-
       // [start]
       // Spinner listen_spinner {
       //   spinning: false;
@@ -65,9 +61,11 @@ template $ExtractedPage : Adw.NavigationPage {
       MenuButton share_button {
         icon-name: "share-symbolic";
         tooltip-text: C_("Extracted screen", "Share To");
-        popover: Popover {
 
-          styles ["menu"]
+        popover: Popover {
+          styles [
+            "menu",
+          ]
 
           child: ListBox share_list_box {
             margin-end: 4;
@@ -93,6 +91,10 @@ template $ExtractedPage : Adw.NavigationPage {
         wrap-mode: char;
 
         buffer: TextBuffer buffer {};
+
+        styles [
+          "textview",
+        ]
       }
     }
   }
@@ -119,8 +121,7 @@ menu primary_menu {
   }
 }
 
-
 menu grab_menu {
-    item (_("Open image"), "app.open_image", "folder-open-symbolic")
-    item (_("Paste from clipboard"), "app.paste_from_clipboard", "folder-open-symbolic")
+  item (_("Open image"), "app.open_image", "folder-open-symbolic")
+  item (_("Paste from clipboard"), "app.paste_from_clipboard", "folder-open-symbolic")
 }

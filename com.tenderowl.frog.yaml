@@ -29,9 +29,13 @@ cleanup:
   - "*.la"
   - "*.a"
 modules:
+  # - "build-aux/leptonica.yaml"
+  # - "build-aux/tesseract.yaml"
   - name: "frog"
     builddir: true
     buildsystem: "meson"
+    config-opts:
+      - "--env=HOME=~/.tesseract-rs"
     sources:
       - type: "dir"
         path: "."

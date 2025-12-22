@@ -1,0 +1,4 @@
+.textview {
+  border-radius: var(--window-radius);
+  margin: 12px;
+}

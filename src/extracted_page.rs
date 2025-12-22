@@ -52,4 +52,8 @@ impl ExtractedPage {
     pub fn new() -> Self {
         glib::Object::new()
     }
+
+    pub fn set_text(&self, text: String) {
+        self.imp().buffer.set_text(&text);
+    }
 }

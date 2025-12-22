@@ -70,6 +70,18 @@ mod imp {
             // Ask the window manager/compositor to present the window
             window.present();
         }
+
+        fn startup(&self) {
+            self.parent_startup();
+
+            let provider = gtk::CssProvider::new();
+            provider.load_from_resource("/com/tenderowl/frog/general.css");
+            gtk::style_context_add_provider_for_display(
+                &gdk::Display::default().expect("Could not connect to a display."),
+                &provider,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
+        }
     }
 
     impl GtkApplicationImpl for FrogxtApplication {}
@@ -178,6 +190,8 @@ impl FrogxtApplication {
             glib::spawn_future_local(clone!(
                 #[weak]
                 window,
+                #[weak(rename_to=app)]
+                self,
                 async move {
                     // let root = window.native().unwrap();
                     // let identifier = WindowIdentifier::from_native(&root).await;
@@ -203,6 +217,9 @@ impl FrogxtApplication {
                                 .downcast_ref::<FrogWindow>()
                                 .expect("Failed to downcast to FrogWindow")
                                 .show_extracted_page();
+                            app.extract_from_file(
+                                file.path().unwrap_or_default().to_str().unwrap_or_default(),
+                            );
                         }
                         Err(err) => {
                             tracing::error!("Failed to take a screenshot {err}");
@@ -274,6 +291,8 @@ impl FrogxtApplication {
                 .downcast::<FrogWindow>()
                 .expect("Failed to downcast to FrogWindow")
                 .show_extracted_page();
+
+            self.extract_from_file(filepath.to_str().unwrap_or_default());
         }
     }
 
@@ -302,5 +321,35 @@ impl FrogxtApplication {
                 }
             ),
         );
+    }
+
+    fn extract_from_file(&self, path: &str) {
+        let window = match self.active_window() {
+            Some(window) => window,
+            None => return,
+        };
+
+        let backend = crate::backends::tesseract::TesseractBackend::new();
+        let filepath = path.to_string();
+
+        glib::spawn_future_local(clone!(
+            #[weak(rename_to=app)]
+            self,
+            #[weak]
+            window,
+            async move {
+                match backend.process_image(filepath.as_str()).await {
+                    Some(result) => {
+                        if let Some(window) = window.downcast_ref::<FrogWindow>() {
+                            window.show_extracted_text(result);
+                        }
+                    }
+                    _ => {
+                        tracing::error!("Failed to extract text from file");
+                        app.show_toast("Failed to extract text");
+                    }
+                }
+            }
+        ));
     }
 }
