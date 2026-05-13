@@ -33,7 +33,9 @@ use crate::config::APP_ID;
 mod imp {
     use std::cell::OnceCell;
 
-    use crate::{extracted_page::ExtractedPage, welcome_page::WelcomePage};
+    use crate::{
+        extracted_page::ExtractedPage, language_popover::LanguagePopover, welcome_page::WelcomePage,
+    };
 
     use super::*;
 
@@ -53,6 +55,15 @@ mod imp {
 
         #[template_child]
         pub extracted_page: TemplateChild<ExtractedPage>,
+
+        #[template_child]
+        pub spinner: TemplateChild<adw::Spinner>,
+
+        #[template_child]
+        pub lang_combo: TemplateChild<gtk::MenuButton>,
+
+        #[template_child]
+        pub language_popover: TemplateChild<LanguagePopover>,
     }
 
     #[glib::object_subclass]

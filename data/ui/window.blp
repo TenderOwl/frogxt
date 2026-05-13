@@ -9,17 +9,114 @@ template $FrogWindow: Adw.ApplicationWindow {
 
   [content]
   Adw.ToastOverlay toast_overlay {
-    Adw.NavigationSplitView split_view {
-      collapsed: true;
+    Adw.ToolbarView {
+      [top]
+      Adw.HeaderBar {
+        show-title: false;
 
-      [sidebar]
-      $WelcomePage welcome_page {
-        name: "welcome";
+        [start]
+        Adw.SplitButton grab_btn {
+          action-name: "app.screenshot";
+          tooltip-text: _("Take a screenshot");
+          icon-name: "camera-symbolic";
+          menu-model: grab_menu;
+        }
+
+        [start]
+        MenuButton lang_combo {
+          label: _("Language");
+          tooltip-text: _("Select language to extract");
+
+          popover: $LanguagePopover language_popover {};
+        }
+
+        [start]
+        Button text_copy_btn {
+          visible: false;
+          action-name: "app.copy_to_clipboard";
+          tooltip-text: C_("Extracted screen", "Copy extracted text to clipboard");
+          icon-name: "clipboard-symbolic";
+        }
+
+        [start]
+        Adw.Spinner spinner {
+          visible: false;
+        }
+
+        [end]
+        MenuButton {
+          icon-name: "menu-symbolic";
+          tooltip-text: C_("Extracted screen", "Open menu");
+          menu-model: primary_menu;
+        }
+
+        [end]
+        MenuButton share_button {
+          visible: false;
+          icon-name: "share-symbolic";
+          tooltip-text: C_("Extracted screen", "Share To");
+
+          popover: Popover {
+            styles [
+              "menu",
+            ]
+
+            child: ListBox share_list_box {
+              margin-end: 4;
+              margin-top: 4;
+              margin-start: 4;
+              margin-bottom: 4;
+            };
+          };
+        }
       }
 
-      $ExtractedPage extracted_page {
-        name: "extracted";
+      Adw.NavigationSplitView split_view {
+        collapsed: true;
+
+        [sidebar]
+        $WelcomePage welcome_page {
+          name: "welcome";
+        }
+
+        $ExtractedPage extracted_page {
+          name: "extracted";
+        }
       }
     }
   }
+}
+
+menu primary_menu {
+  section {
+    item {
+      label: _("Preferences");
+      action: "app.preferences";
+    }
+  }
+
+  section {
+    item {
+      label: _("Keyboard Shortcuts");
+      action: "app.shortcuts";
+    }
+
+    item {
+      label: _("About Frog");
+      action: "app.about";
+    }
+  }
+
+  section {
+    item {
+      label: _("⭐ Star on GitHub");
+      action: "app.github_star";
+      icon: "starred-symbolic";
+    }
+  }
+}
+
+menu grab_menu {
+  item (_("Open image"), "app.open_image", "folder-open-symbolic")
+  item (_("Paste from clipboard"), "app.paste_from_clipboard", "folder-open-symbolic")
 }

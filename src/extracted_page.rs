@@ -1,4 +1,3 @@
-use crate::language_popover::LanguagePopover;
 use adw::subclass::prelude::*;
 use gtk::{glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 
@@ -10,12 +9,12 @@ mod imp {
     #[template(resource = "/com/tenderowl/frog/ui/extracted-page.ui")]
     pub struct ExtractedPage {
         // Template widgets
-        #[template_child]
-        pub share_list_box: TemplateChild<gtk::ListBox>,
-        #[template_child]
-        pub grab_btn: TemplateChild<adw::SplitButton>,
-        #[template_child]
-        pub text_copy_btn: TemplateChild<gtk::Button>,
+        // #[template_child]
+        // pub share_list_box: TemplateChild<gtk::ListBox>,
+        // #[template_child]
+        // pub grab_btn: TemplateChild<adw::SplitButton>,
+        // #[template_child]
+        // pub text_copy_btn: TemplateChild<gtk::Button>,
         #[template_child]
         pub text_view: TemplateChild<gtk::TextView>,
         #[template_child]

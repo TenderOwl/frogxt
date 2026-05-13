@@ -3,8 +3,6 @@ use gtk::{glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 
 mod imp {
 
-    use crate::language_popover::LanguagePopover;
-
     use super::*;
 
     #[derive(Debug, Default, gtk::CompositeTemplate)]
@@ -12,16 +10,7 @@ mod imp {
     pub struct WelcomePage {
         // Template widgets
         #[template_child]
-        pub spinner: TemplateChild<adw::Spinner>,
-
-        #[template_child]
         pub welcome: TemplateChild<adw::StatusPage>,
-
-        #[template_child]
-        pub lang_combo: TemplateChild<gtk::MenuButton>,
-
-        #[template_child]
-        pub language_popover: TemplateChild<LanguagePopover>,
     }
 
     #[glib::object_subclass]

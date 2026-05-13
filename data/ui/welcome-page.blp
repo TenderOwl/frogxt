@@ -4,134 +4,93 @@ using Adw 1;
 template $WelcomePage: Adw.NavigationPage {
   title: "Welcome";
 
-  Adw.ToolbarView {
-    [top]
-    Adw.HeaderBar {
-      visible: true;
-      tooltip-text: _("Extract text from anywhere");
+  Adw.StatusPage welcome {
+    icon-name: "com.tenderowl.frog";
+    title: "Frog";
+    description: _("Extract text from anywhere");
 
-      [title]
-      Adw.WindowTitle {
-        title: "Frog";
-      }
+    Adw.Clamp {
+      maximum-size: 240;
 
-      [start]
-      MenuButton lang_combo {
-        label: _("Language");
-        tooltip-text: _("Select language to extract");
+      child: Box {
+        orientation: vertical;
 
-        popover: $LanguagePopover language_popover {};
-      }
+        Button {
+          action-name: "app.screenshot";
+          tooltip-text: C_("Welcome screen", "Take a Screenshot");
 
-      // [start]
-      // Adw.SplitButton grab_btn {
-      //   action-name: "app.get_screenshot";
-      //   tooltip-text: _("Take a screenshot");
-      //   icon-name: "camera-photo-symbolic";
-      //   menu-model: grab_menu;
-      // }
+          styles [
+            "pill",
+            "suggested-action",
+          ]
 
-      [start]
-      Adw.Spinner spinner {
-        visible: false;
-      }
+          child: Box {
+            halign: center;
+            spacing: 6;
+            // orientation: vertical;
+            Image {
+              icon-name: "camera-symbolic";
+            }
 
-      [end]
-      MenuButton {
-        icon-name: "menu-symbolic";
-        menu-model: primary_menu;
-        tooltip-text: _("Open menu");
-      }
-    }
+            Label {
+              label: _("_Take a Screenshot");
+              use-underline: true;
+            }
+          };
+        }
 
-    Adw.StatusPage welcome {
-      icon-name: "com.tenderowl.frog";
-      title: "Frog";
-      description: _("Extract text from anywhere");
+        Button {
+          action-name: "app.open-file";
+          tooltip-text: C_("Welcome screen", "Open Image");
 
-      Adw.Clamp {
-        maximum-size: 240;
+          styles [
+            "pill",
+          ]
 
-        child: Box {
-          orientation: vertical;
+          child: Box {
+            halign: center;
+            spacing: 6;
+            // orientation: vertical;
+            Image {
+              icon-name: "open-folder-symbolic";
+            }
 
-          Button {
-            action-name: "app.screenshot";
-            tooltip-text: C_("Welcome screen", "Take a Screenshot");
+            Label {
+              label: _("_Open Image");
+              use-underline: true;
+            }
+          };
+        }
 
-            styles [
-              "pill",
-              "suggested-action",
-            ]
+        Button {
+          action-name: "app.paste-from-clipboard";
+          tooltip-text: C_("Welcome screen", "Paste image from clipboard");
 
-            child: Box {
-              halign: center;
-              spacing: 6;
-              // orientation: vertical;
-              Image {
-                icon-name: "camera-symbolic";
-              }
+          styles [
+            "pill",
+          ]
 
-              Label {
-                label: _("_Take a Screenshot");
-                use-underline: true;
-              }
-            };
-          }
+          child: Box {
+            halign: center;
+            spacing: 6;
+            // orientation: vertical;
+            Image {
+              icon-name: "clipboard-symbolic";
+            }
 
-          Button {
-            action-name: "app.open-file";
-            tooltip-text: C_("Welcome screen", "Open Image");
+            Label {
+              label: _("Paste Image");
+              use-underline: true;
+            }
+          };
+        }
 
-            styles [
-              "pill",
-            ]
-
-            child: Box {
-              halign: center;
-              spacing: 6;
-              // orientation: vertical;
-              Image {
-                icon-name: "open-folder-symbolic";
-              }
-
-              Label {
-                label: _("_Open Image");
-                use-underline: true;
-              }
-            };
-          }
-
-          Button {
-            action-name: "app.paste-from-clipboard";
-            tooltip-text: C_("Welcome screen", "Paste image from clipboard");
-
-            styles [
-              "pill",
-            ]
-
-            child: Box {
-              halign: center;
-              spacing: 6;
-              // orientation: vertical;
-              Image {
-                icon-name: "clipboard-symbolic";
-              }
-
-              Label {
-                label: _("Paste Image");
-                use-underline: true;
-              }
-            };
-          }
-
-          // Label {
-          //    margin-top: 8;
-          //       label: _("...or drop image here");
-          //       styles ["dim-label"]
-          //     }
-        };
-      }
+        // Label {
+        //    margin-top: 8;
+        //       label: _("...or drop image here");
+        //       styles ["dim-label"]
+        //     }
+      };
     }
   }
 }
