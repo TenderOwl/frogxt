@@ -119,6 +119,10 @@ impl FrogxtApplication {
         let about_action = gio::ActionEntry::builder("about")
             .activate(move |app: &Self, _, _| app.show_about())
             .build();
+        // GitHub Star
+        let github_star_action = gio::ActionEntry::builder("github_star")
+            .activate(move |app: &Self, _, _| app.github_star())
+            .build();
         // Toast
         let toast_action = gio::ActionEntry::builder("toast")
             .parameter_type(Some(glib::VariantTy::STRING))
@@ -168,6 +172,7 @@ impl FrogxtApplication {
             screenshot_action,
             open_image_action,
             paste_from_clipboard_action,
+            github_star_action,
         ]);
     }
 
@@ -191,6 +196,17 @@ impl FrogxtApplication {
             .build();
 
         about.present(Some(&window));
+    }
+
+    fn github_star(&self) {
+        let launcher = gtk::UriLauncher::new("https://github.com/tenderowl/frog");
+        if let Some(window) = self.active_window() {
+            launcher.launch(Some(&window), gio::Cancellable::NONE, |result| {
+                if let Err(err) = result {
+                    tracing::error!("failed to launch github star: {err}");
+                }
+            });
+        }
     }
 
     fn show_toast(&self, message: &str) {
