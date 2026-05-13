@@ -1,9 +1,10 @@
 id: "com.tenderowl.frog"
 runtime: "org.gnome.Platform"
-runtime-version: "49"
+runtime-version: "50"
 sdk: "org.gnome.Sdk"
 sdk-extensions:
   - "org.freedesktop.Sdk.Extension.rust-stable"
+  - "org.freedesktop.Sdk.Extension.llvm22"
 command: "frog"
 finish-args:
   - "--share=network"
@@ -13,6 +14,8 @@ finish-args:
   - "--socket=wayland"
 build-options:
   append-path: "/usr/lib/sdk/rust-stable/bin"
+  prepend-path: "/usr/lib/sdk/llvm22/bin"
+  prepend-ld-library-path: "/usr/lib/sdk/llvm22/lib"
   build-args:
     - "--share=network"
   env:
@@ -34,8 +37,8 @@ modules:
   - name: "frog"
     builddir: true
     buildsystem: "meson"
-    config-opts:
-      - "--env=HOME=~/.tesseract-rs"
+    # config-opts:
+    #   - "--env=HOME=~/.tesseract-rs"
     sources:
       - type: "dir"
         path: "."

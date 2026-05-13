@@ -1,11 +1,5 @@
 use adw::subclass::prelude::*;
-use gtk::{
-    gio,
-    glib::{self, gobject_ffi::GObject},
-    prelude::*,
-    subclass::prelude::*,
-    CompositeTemplate,
-};
+use gtk::glib::{self};
 use std::cell::RefCell;
 
 #[derive(Debug, Clone)]

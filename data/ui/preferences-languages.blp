@@ -2,10 +2,10 @@ using Gtk 4.0;
 using Gio 2.0;
 using Adw 1;
 
-template $PreferencesLanguagesPage : Adw.PreferencesPage {
+template $PreferencesLanguagesPage: Adw.PreferencesPage {
   title: _("_Languages");
   use-underline: true;
-  icon-name: "preferences-desktop-locale-symbolic";
+  icon-name: "languages-symbolic";
 
   Box {
     orientation: vertical;
@@ -43,7 +43,10 @@ template $PreferencesLanguagesPage : Adw.PreferencesPage {
             hexpand: true;
             halign: start;
 
-            styles ["heading", "h4"]
+            styles [
+              "heading",
+              "h4",
+            ]
           }
 
           Button {
@@ -51,7 +54,9 @@ template $PreferencesLanguagesPage : Adw.PreferencesPage {
             tooltip-text: "Add language";
             clicked => $_on_add_language();
 
-            styles ["flat"]
+            styles [
+              "flat",
+            ]
           }
         }
       }
@@ -75,6 +80,7 @@ template $PreferencesLanguagesPage : Adw.PreferencesPage {
 
             StackPage {
               name: 'languages_state';
+
               child: ListView list_view {
                 name: "lang_list";
                 enable-rubberband: false;
@@ -82,25 +88,33 @@ template $PreferencesLanguagesPage : Adw.PreferencesPage {
                 model: NoSelection selection {
                   model: FilterListModel model {
                     model: Gio.ListStore list_store {
-                      item-type: typeof<$LanguageItem>;
+                      // item-type: typeof<$LanguageItem>;
                     };
                   };
                 };
+
                 factory: SignalListItemFactory factory {
                   setup => $_on_item_setup();
                   bind => $_on_item_bind();
                 };
 
-                styles ["boxed-list", "card"]
+                styles [
+                  "boxed-list",
+                  "card",
+                ]
               };
             }
 
             StackPage {
               name: 'empty_state';
+
               child: Adw.StatusPage {
                 icon-name: "system-search-symbolic";
                 title: _("No Results Found");
-                styles ["compact"]
+
+                styles [
+                  "compact",
+                ]
               };
             }
           }

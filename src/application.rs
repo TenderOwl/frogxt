@@ -23,11 +23,13 @@
  * SPDX-License-Identifier: MIT
  */
 
+use adw::PreferencesDialog;
 use adw::{prelude::*, subclass::prelude::*};
 use ashpd::{desktop::screenshot, WindowIdentifier};
 use gettextrs::gettext;
 use gtk::glib::clone;
 use gtk::{gdk, gio, glib};
+use tracing_subscriber::fmt::format;
 
 use crate::config::VERSION;
 use crate::FrogWindow;
@@ -105,6 +107,10 @@ impl FrogxtApplication {
     }
 
     fn setup_gactions(&self) {
+        let prefs_action = gio::ActionEntry::builder("preferences")
+            .activate(move |app: &Self, _, _| app.show_preferences())
+            .build();
+
         // Quit
         let quit_action = gio::ActionEntry::builder("quit")
             .activate(move |app: &Self, _, _| app.quit())
@@ -137,6 +143,10 @@ impl FrogxtApplication {
 
         // Set keyboard shortcusts
         self.set_accels_for_action(
+            format!("app.{}", prefs_action.name()).as_str(),
+            &[&"<Primary>comma"],
+        );
+        self.set_accels_for_action(
             format!("app.{}", screenshot_action.name()).as_str(),
             &[&"<Primary>g"],
         );
@@ -151,6 +161,7 @@ impl FrogxtApplication {
 
         // Add actions
         self.add_action_entries([
+            prefs_action,
             quit_action,
             about_action,
             toast_action,
@@ -158,6 +169,12 @@ impl FrogxtApplication {
             open_image_action,
             paste_from_clipboard_action,
         ]);
+    }
+
+    fn show_preferences(&self) {
+        let window = self.active_window().unwrap();
+        let prefs = crate::preferences_dialog::PrerefencesDialog::new();
+        prefs.present(Some(&window));
     }
 
     fn show_about(&self) {
@@ -329,27 +346,29 @@ impl FrogxtApplication {
             None => return,
         };
 
-        let backend = crate::backends::tesseract::TesseractBackend::new();
+        // let backend = crate::backends::tesseract::TesseractBackend::new();
         let filepath = path.to_string();
 
-        glib::spawn_future_local(clone!(
-            #[weak(rename_to=app)]
-            self,
-            #[weak]
-            window,
-            async move {
-                match backend.process_image(filepath.as_str()).await {
-                    Some(result) => {
-                        if let Some(window) = window.downcast_ref::<FrogWindow>() {
-                            window.show_extracted_text(result);
-                        }
-                    }
-                    _ => {
-                        tracing::error!("Failed to extract text from file");
-                        app.show_toast("Failed to extract text");
-                    }
-                }
-            }
-        ));
+        self.activate_action("app.toast", Some(&filepath.to_variant()));
+
+        // glib::spawn_future_local(clone!(
+        //     #[weak(rename_to=app)]
+        //     self,
+        //     #[weak]
+        //     window,
+        //     async move {
+        //         match backend.process_image(filepath.as_str()).await {
+        //             Some(result) => {
+        //                 if let Some(window) = window.downcast_ref::<FrogWindow>() {
+        //                     window.show_extracted_text(result);
+        //                 }
+        //             }
+        //             _ => {
+        //                 tracing::error!("Failed to extract text from file");
+        //                 app.show_toast("Failed to extract text");
+        //             }
+        //         }
+        //     }
+        // ));
     }
 }
