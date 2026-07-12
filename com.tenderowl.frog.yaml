@@ -2,9 +2,9 @@ id: "com.tenderowl.frog"
 runtime: "org.gnome.Platform"
 runtime-version: "50"
 sdk: "org.gnome.Sdk"
-sdk-extensions:
-  # - "org.freedesktop.Sdk.Extension.rust-stable"
-  # - "org.freedesktop.Sdk.Extension.llvm22"
+# sdk-extensions:
+#   - "org.freedesktop.Sdk.Extension.rust-stable"
+#   - "org.freedesktop.Sdk.Extension.llvm22"
 command: "frog"
 finish-args:
   - "--share=network"
@@ -21,6 +21,7 @@ build-options:
   env:
     RUST_BACKTRACE: "1"
     RUST_LOG: "frog=debug"
+    RUSTC_WRAPPER: "ccache"
 cleanup:
   - "/include"
   - "/lib/pkgconfig"
@@ -32,6 +33,8 @@ cleanup:
   - "*.la"
   - "*.a"
 modules:
+  # - "build-aux/leptonica.yaml"
+  # - "build-aux/tesseract.yaml"
   - name: "frog"
     buildsystem: "meson"
     config-opts:

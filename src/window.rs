@@ -25,7 +25,7 @@
 
 use adw::subclass::prelude::*;
 use gio::Settings;
-use gtk::{gdk, prelude::*};
+use gtk::prelude::*;
 use gtk::{gio, glib};
 
 use crate::config::APP_ID;
@@ -174,9 +174,8 @@ impl FrogWindow {
         self.imp().split_view.set_show_content(false);
     }
 
-    pub fn begin_extracting_texture(&self, _texture: Option<gdk::Texture>) {
-        // self.imp().extracted_texture = Some(texture);
-        self.show_extracted_page();
+    pub fn show_spinner(&self, visible: bool) {
+        self.imp().spinner.set_visible(visible);
     }
 
     pub fn show_extracted_text(&self, text: String) {

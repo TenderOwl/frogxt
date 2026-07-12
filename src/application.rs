@@ -23,15 +23,16 @@
  * SPDX-License-Identifier: MIT
  */
 
-use adw::PreferencesDialog;
+use std::path::Path;
+
 use adw::{prelude::*, subclass::prelude::*};
-use ashpd::{desktop::screenshot, WindowIdentifier};
+use ashpd::desktop::screenshot;
 use gettextrs::gettext;
 use gtk::glib::clone;
 use gtk::{gdk, gio, glib};
-use tracing_subscriber::fmt::format;
 
 use crate::config::VERSION;
+use crate::services::ocr::OcrEngine;
 use crate::FrogWindow;
 
 mod imp {
@@ -83,6 +84,14 @@ mod imp {
                 &provider,
                 gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
             );
+
+            init_tessdata()
+                .map_err(|_| {
+                    tracing::error!("Failed to initialize tessdata");
+                    self.obj()
+                        .show_toast("Failed to initalize language models.");
+                })
+                .ok();
         }
     }
 
@@ -343,13 +352,23 @@ impl FrogxtApplication {
             glib::clone!(
                 #[weak]
                 window,
+                #[weak(rename_to=app)]
+                self,
                 move |texture| {
-                    tracing::info!("Texture read from clipboard: {:?}", texture);
-                    if let Ok(texture) = texture {
-                        window
+                    if let Ok(Some(texture)) = texture {
+                        let frog_window = window
                             .downcast_ref::<FrogWindow>()
-                            .expect("Failed to downcast to FrogWindow")
-                            .begin_extracting_texture(texture);
+                            .expect("Failed to downcast to FrogWindow");
+
+                        let path = std::env::temp_dir().join("frog_clipboard.png");
+                        if let Err(e) = texture.save_to_png(&path) {
+                            tracing::error!("Failed to save clipboard texture: {e}");
+                            frog_window.show_toast("Failed to process clipboard image");
+                            return;
+                        }
+
+                        frog_window.show_extracted_page();
+                        app.extract_from_file(path.to_str().unwrap_or_default());
                     }
                 }
             ),
@@ -358,33 +377,147 @@ impl FrogxtApplication {
 
     fn extract_from_file(&self, path: &str) {
         let window = match self.active_window() {
-            Some(window) => window,
+            Some(window) => window.downcast::<FrogWindow>().unwrap(),
             None => return,
         };
 
-        // let backend = crate::backends::tesseract::TesseractBackend::new();
         let filepath = path.to_string();
+        let tessdata_path = resolve_tessdata_path();
+        tracing::info!("OCR: using tessdata from {tessdata_path}");
 
-        self.activate_action("app.toast", Some(&filepath.to_variant()));
+        window.show_spinner(true);
+        window.show_extracted_page();
 
-        // glib::spawn_future_local(clone!(
-        //     #[weak(rename_to=app)]
-        //     self,
-        //     #[weak]
-        //     window,
-        //     async move {
-        //         match backend.process_image(filepath.as_str()).await {
-        //             Some(result) => {
-        //                 if let Some(window) = window.downcast_ref::<FrogWindow>() {
-        //                     window.show_extracted_text(result);
-        //                 }
-        //             }
-        //             _ => {
-        //                 tracing::error!("Failed to extract text from file");
-        //                 app.show_toast("Failed to extract text");
-        //             }
-        //         }
-        //     }
-        // ));
+        glib::spawn_future_local(clone!(
+            #[weak]
+            window,
+            async move {
+                let result = gio::spawn_blocking(move || -> Result<String, String> {
+                    tracing::info!("OCR: opening image from {filepath}");
+                    let img = image::open(&filepath).map_err(|e| {
+                        tracing::error!("Failed to open image: {e}");
+                        e.to_string()
+                    })?;
+                    tracing::info!(
+                        "OCR: image loaded: {}x{}",
+                        img.width(),
+                        img.height()
+                    );
+
+                    let tessdata_file = std::path::Path::new(&tessdata_path)
+                        .join("eng.traineddata");
+                    if !tessdata_file.exists() {
+                        tracing::error!(
+                            "OCR: tessdata file not found at {}",
+                            tessdata_file.display()
+                        );
+                    }
+
+                    let engine = OcrEngine::new(&tessdata_path, "eng").map_err(|e| {
+                        tracing::error!("Failed to create OCR engine: {e}");
+                        e.to_string()
+                    })?;
+
+                    let ocr_result = engine.recognize(&img).map_err(|e| {
+                        tracing::error!("OCR recognition failed: {e}");
+                        e.to_string()
+                    })?;
+
+                    tracing::info!(
+                        "OCR complete: {} words, {:.1}% confidence",
+                        ocr_result.word_count,
+                        ocr_result.confidence
+                    );
+
+                    Ok(ocr_result.text)
+                })
+                .await;
+
+                window.show_spinner(false);
+
+                match result {
+                    Ok(Ok(text)) => {
+                        window.show_extracted_text(text);
+                    }
+                    Ok(Err(e)) => {
+                        window.show_toast(&format!("OCR failed: {e}"));
+                    }
+                    Err(e) => {
+                        tracing::error!("OCR task panicked: {:?}", e);
+                        window.show_toast("Failed to extract text");
+                    }
+                }
+            }
+        ));
     }
+}
+
+fn resolve_tessdata_path() -> String {
+    let home = std::env::var("HOME").unwrap_or_default();
+    let candidates: Vec<std::path::PathBuf> = vec![
+        std::path::PathBuf::from(format!("{}/.tesseract-rs/tessdata", home)),
+        glib::user_data_dir().join("tessdata"),
+        std::path::PathBuf::from("/app/share/appdata/tessdata"),
+        std::path::PathBuf::from("data/tessdata"),
+        std::path::PathBuf::from("/usr/share/tessdata"),
+        std::path::PathBuf::from("/usr/share/tesseract-ocr/4.00/tessdata"),
+        std::path::PathBuf::from("/usr/share/tesseract-ocr/tessdata"),
+    ];
+
+    for path in &candidates {
+        if path.join("eng.traineddata").exists() {
+            return path.to_str().unwrap_or("").to_string();
+        }
+    }
+
+    // Fallback to user data dir
+    glib::user_data_dir()
+        .join("tessdata")
+        .to_str()
+        .unwrap_or("/app/share/appdata/tessdata")
+        .to_string()
+}
+
+fn init_tessdata() -> Result<(), ()> {
+    let tessdata_dir = glib::user_data_dir().join("tessdata");
+    if !tessdata_dir.exists() {
+        std::fs::create_dir_all(&tessdata_dir).map_err(|e| {
+            tracing::error!("Failed to create tessdata directory: {}", e);
+            ()
+        })?;
+    }
+
+    let dest_path = tessdata_dir.join("eng.traineddata");
+    if dest_path.exists() {
+        return Ok(());
+    }
+
+    let home = std::env::var("HOME").unwrap_or_default();
+    let candidates: Vec<std::path::PathBuf> = vec![
+        std::path::PathBuf::from(format!("{}/.tesseract-rs/tessdata/eng.traineddata", home)),
+        std::path::PathBuf::from("/app/share/appdata/tessdata/eng.traineddata"),
+        std::path::PathBuf::from("data/tessdata/eng.traineddata"),
+        tessdata_dir.clone(),
+        std::path::PathBuf::from("/usr/share/tessdata/eng.traineddata"),
+        std::path::PathBuf::from("/usr/share/tesseract-ocr/4.00/tessdata/eng.traineddata"),
+        std::path::PathBuf::from("/usr/share/tesseract-ocr/tessdata/eng.traineddata"),
+    ];
+
+    for source_path in &candidates {
+        if source_path.exists() {
+            tracing::info!("Copying tessdata from {}", source_path.display());
+            std::fs::copy(source_path, &dest_path).map_err(|e| {
+                tracing::error!("Failed to copy eng.traineddata: {}", e);
+                ()
+            })?;
+            return Ok(());
+        }
+    }
+
+    tracing::error!(
+        "eng.traineddata not found in any candidate path. \
+         Searched: {:?}",
+        candidates.iter().map(|p| p.display().to_string()).collect::<Vec<_>>()
+    );
+    Err(())
 }
