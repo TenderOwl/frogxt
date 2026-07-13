@@ -1,8 +1,6 @@
 use adw::subclass::prelude::*;
 use gtk::{gio, glib, CompositeTemplate};
 
-use crate::language_item;
-
 mod imp {
     use super::*;
 
@@ -32,6 +30,7 @@ mod imp {
 
         fn class_init(klass: &mut Self::Class) {
             klass.bind_template();
+            klass.bind_template_callbacks();
         }
 
         fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
@@ -42,6 +41,21 @@ mod imp {
     impl ObjectImpl for PreferencesLanguagesPage {}
     impl WidgetImpl for PreferencesLanguagesPage {}
     impl PreferencesPageImpl for PreferencesLanguagesPage {}
+
+    #[gtk::template_callbacks]
+    impl PreferencesLanguagesPage {
+        #[template_callback]
+        fn on_banner_clicked(&self, banner: adw::Banner) {}
+
+        #[template_callback]
+        fn on_add_language(&self, button: gtk::Button) {}
+
+        #[template_callback]
+        fn on_item_setup(&self, factory: gtk::SignalListItemFactory, list_item: gtk::ListItem) {}
+
+        #[template_callback]
+        fn on_item_bind(&self, factory: gtk::SignalListItemFactory, list_item: gtk::ListItem) {}
+    }
 }
 
 glib::wrapper! {

@@ -16,7 +16,6 @@ mod imp {
         // pub entry: TemplateChild<gtk::SearchEntry>,
         // #[template_child]
         // pub list_view: TemplateChild<gtk::ListBox>,
-
         // pub lang_list: Option<gio::ListStore>,
         // pub filters_list: Option<gtk::FilterListModel>,
         // pub filter: Option<gtk::CustomFilter>,

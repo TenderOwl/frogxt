@@ -44,10 +44,10 @@ mod imp {
     #[derive(Debug, Default, gtk::CompositeTemplate)]
     #[template(resource = "/com/tenderowl/frog/ui/preferences-dialog.ui")]
     pub struct PrerefencesDialog {
-        // #[template_child]
-        pub general_page: OnceCell<general_page::PreferencesGeneralPage>,
-        // #[template_child]
-        pub languages_page: OnceCell<languages_page::PreferencesLanguagesPage>,
+        #[template_child]
+        pub general_page: TemplateChild<general_page::PreferencesGeneralPage>,
+        #[template_child]
+        pub languages_page: TemplateChild<languages_page::PreferencesLanguagesPage>,
     }
 
     #[glib::object_subclass]
@@ -93,10 +93,7 @@ impl PrerefencesDialog {
         glib::Object::builder().build()
     }
 
-    fn build_ui(&self) {
-        self.add(&PreferencesGeneralPage::new());
-        self.add(&PreferencesLanguagesPage::new());
-    }
+    fn build_ui(&self) {}
 
     fn setup_settings(&self) {
         // Load latest window state

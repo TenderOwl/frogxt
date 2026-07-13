@@ -7,8 +7,8 @@ template $PreferencesLanguagesPage: Adw.PreferencesPage {
   use-underline: true;
   icon-name: "languages-symbolic";
 
-  Box {
-    orientation: vertical;
+  Adw.PreferencesGroup {
+    title: _("Languages");
 
     SearchBar search_bar {
       show-close-button: true;
@@ -22,7 +22,7 @@ template $PreferencesLanguagesPage: Adw.PreferencesPage {
 
     Adw.Banner banner {
       title: _("Models location unreachable. Check your internet connection");
-      button-clicked => $_on_banner_clicked();
+      button-clicked => $on_banner_clicked() swapped;
       button-label: _("Retry");
       revealed: false;
     }
@@ -30,7 +30,7 @@ template $PreferencesLanguagesPage: Adw.PreferencesPage {
     Revealer revealer {
       reveal-child: bind search_bar.search-mode-enabled bidirectional inverted;
 
-      Adw.ClampScrollable {
+      Adw.Clamp {
         maximum-size: 600;
 
         Box {
@@ -51,8 +51,8 @@ template $PreferencesLanguagesPage: Adw.PreferencesPage {
 
           Button {
             icon-name: "list-add-symbolic";
-            tooltip-text: "Add language";
-            clicked => $_on_add_language();
+            tooltip-text: _("Add language");
+            clicked => $on_add_language() swapped;
 
             styles [
               "flat",
@@ -66,14 +66,14 @@ template $PreferencesLanguagesPage: Adw.PreferencesPage {
       vexpand: true;
       margin-bottom: 12;
 
-      Adw.PreferencesGroup languages_list_group {
-        margin-top: 12;
-        margin-start: 12;
-        margin-end: 12;
-        margin-bottom: 12;
+      Adw.ClampScrollable {
+        maximum-size: 600;
 
-        Adw.ClampScrollable {
-          maximum-size: 600;
+        Adw.PreferencesGroup languages_list_group {
+          margin-top: 12;
+          margin-start: 12;
+          margin-end: 12;
+          margin-bottom: 12;
 
           Stack views {
             vexpand: true;
@@ -81,27 +81,29 @@ template $PreferencesLanguagesPage: Adw.PreferencesPage {
             StackPage {
               name: 'languages_state';
 
-              child: ListView list_view {
-                name: "lang_list";
-                enable-rubberband: false;
+              child: ScrolledWindow {
+                ListView list_view {
+                  name: "lang_list";
+                  enable-rubberband: false;
 
-                model: NoSelection selection {
-                  model: FilterListModel model {
-                    model: Gio.ListStore list_store {
-                      // item-type: typeof<$LanguageItem>;
+                  model: NoSelection selection {
+                    model: FilterListModel model {
+                      model: Gio.ListStore list_store {
+                        // item-type: typeof<$LanguageItem>;
+                      };
                     };
                   };
-                };
 
-                factory: SignalListItemFactory factory {
-                  setup => $_on_item_setup();
-                  bind => $_on_item_bind();
-                };
+                  factory: SignalListItemFactory factory {
+                    setup => $on_item_setup() swapped;
+                    bind => $on_item_bind() swapped;
+                  };
 
-                styles [
-                  "boxed-list",
-                  "card",
-                ]
+                  styles [
+                    "boxed-list",
+                    "card",
+                  ]
+                }
               };
             }
 
