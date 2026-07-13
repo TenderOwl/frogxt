@@ -23,10 +23,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-use std::path::Path;
-
 use adw::{prelude::*, subclass::prelude::*};
-use ashpd::{desktop::screenshot, WindowIdentifier};
+use ashpd::WindowIdentifier;
 use gettextrs::gettext;
 use gtk::glib::clone;
 use gtk::{gdk, gio, glib};
@@ -290,6 +288,11 @@ impl FrogxtApplication {
                 // Now hide so it doesn't overlay the screenshot area
                 window.set_visible(false);
 
+                // On Wayland the compositor processes the unmap asynchronously,
+                // so requesting the screenshot immediately can still capture the
+                // window. Wait until the hide actually takes effect first.
+                wait_until_window_hidden(&window).await;
+
                 tracing::info!("send screenshot request");
 
                 match crate::portal::take_screenshot(identifier).await {
@@ -401,6 +404,7 @@ impl FrogxtApplication {
 
         window.show_spinner(true);
         window.show_extracted_page();
+        window.set_visible(true);
 
         glib::spawn_future_local(clone!(
             #[weak]
@@ -447,22 +451,28 @@ impl FrogxtApplication {
 
                 match result {
                     Ok(Ok(text)) => {
-                        window.set_visible(true);
                         window.show_extracted_text(text);
                     }
                     Ok(Err(e)) => {
-                        window.set_visible(true);
                         window.show_toast(&format!("OCR failed: {e}"));
                     }
                     Err(e) => {
                         tracing::error!("OCR task panicked: {:?}", e);
-                        window.set_visible(true);
                         window.show_toast("Failed to extract text");
                     }
                 }
             }
         ));
     }
+}
+
+async fn wait_until_window_hidden(window: &gtk::Window) {
+    let start = std::time::Instant::now();
+    while window.is_visible() && start.elapsed() < std::time::Duration::from_millis(500) {
+        glib::timeout_future(std::time::Duration::from_millis(30)).await;
+    }
+    // Extra grace period for the compositor to drop the last frame.
+    glib::timeout_future(std::time::Duration::from_millis(200)).await;
 }
 
 fn resolve_tessdata_path() -> String {
