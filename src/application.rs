@@ -26,7 +26,7 @@
 use std::path::Path;
 
 use adw::{prelude::*, subclass::prelude::*};
-use ashpd::desktop::screenshot;
+use ashpd::{desktop::screenshot, WindowIdentifier};
 use gettextrs::gettext;
 use gtk::glib::clone;
 use gtk::{gdk, gio, glib};
@@ -227,71 +227,43 @@ impl FrogxtApplication {
     fn take_screenshot(&self) {
         tracing::info!("begin taking screenshot");
 
-        if let Some(window) = self.active_window() {
-            // Implement screenshot functionality here by utilizing Portals and ASHPD
-            glib::spawn_future_local(clone!(
-                #[weak]
-                window,
-                #[weak(rename_to=app)]
-                self,
-                async move {
-                    // let root = window.native().unwrap();
-                    // let identifier = WindowIdentifier::from_native(&root).await;
-                    // let path = std::env::temp_dir().join("frog_screenshot.png");
-                    tracing::info!("send screenshot request");
+        let window = match self.active_window() {
+            Some(window) => window,
+            None => return,
+        };
 
-                    match screenshot::ScreenshotRequest::default()
-                        // .identifier(identifier)
-                        .interactive(true)
-                        .modal(false)
-                        .send()
-                        .await
-                        .and_then(|r| r.response())
-                    {
-                        Ok(response) => {
-                            let file = gio::File::for_uri(response.uri().as_str());
-                            tracing::info!(
-                                "Screenshot saved to {}",
-                                file.path().unwrap_or_default().display()
-                            );
+        glib::spawn_future_local(clone!(
+            #[weak]
+            window,
+            #[weak(rename_to=app)]
+            self,
+            async move {
+                // Must get identifier while window is visible (Wayland needs the surface)
+                let native = window.native().unwrap();
+                let identifier = WindowIdentifier::from_native(&native)
+                    .await
+                    .map(|id| id.to_string())
+                    .unwrap_or_default();
 
-                            window
-                                .downcast_ref::<FrogWindow>()
-                                .expect("Failed to downcast to FrogWindow")
-                                .show_extracted_page();
-                            app.extract_from_file(
-                                file.path().unwrap_or_default().to_str().unwrap_or_default(),
-                            );
-                        }
-                        Err(err) => {
-                            tracing::error!("Failed to take a screenshot {err}");
-                        }
+                // Now hide so it doesn't overlay the screenshot area
+                window.set_visible(false);
+
+                tracing::info!("send screenshot request");
+
+                match crate::portal::take_screenshot(identifier).await {
+                    Ok(uri) => {
+                        let file = gio::File::for_uri(&uri);
+                        let filepath = file.path().unwrap_or_default();
+                        tracing::info!("Screenshot saved to {}", filepath.display());
+                        app.extract_from_file(filepath.to_str().unwrap_or_default());
                     }
-
-                    tracing::info!("Window show");
-                    window.set_visible(true);
+                    Err(err) => {
+                        tracing::error!("Failed to take a screenshot: {err}");
+                        window.set_visible(true);
+                    }
                 }
-            ));
-
-            glib::idle_add_local_full(
-                glib::Priority::HIGH,
-                clone!(
-                    #[weak]
-                    window,
-                    #[upgrade_or]
-                    glib::ControlFlow::Break,
-                    move || {
-                        window.set_visible(false);
-                        tracing::info!("Window hide");
-                        glib::ControlFlow::Break
-                    }
-                ),
-            );
-            tracing::info!("end taking screenshot");
-            while glib::MainContext::default().pending() {
-                glib::MainContext::default().iteration(false);
             }
-        }
+        ));
     }
 
     fn select_file(&self) {
@@ -437,13 +409,16 @@ impl FrogxtApplication {
 
                 match result {
                     Ok(Ok(text)) => {
+                        window.set_visible(true);
                         window.show_extracted_text(text);
                     }
                     Ok(Err(e)) => {
+                        window.set_visible(true);
                         window.show_toast(&format!("OCR failed: {e}"));
                     }
                     Err(e) => {
                         tracing::error!("OCR task panicked: {:?}", e);
+                        window.set_visible(true);
                         window.show_toast("Failed to extract text");
                     }
                 }

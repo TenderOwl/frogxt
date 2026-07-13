@@ -30,6 +30,7 @@ mod extracted_page;
 mod language_item;
 mod language_popover;
 mod language_popover_row;
+mod portal;
 mod preferences_dialog;
 mod services;
 mod welcome_page;

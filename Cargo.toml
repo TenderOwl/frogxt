@@ -10,7 +10,7 @@ gtk = { version = "0.11", package = "gtk4", features = ["gnome_50"] }
 image = "0.25"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync"] }
 tesseract-rs = { version = "0.2", default-features = false, features=["build-tesseract"] }
 printpdf = "0.9"
 imageproc = "0.26"
