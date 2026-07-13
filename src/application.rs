@@ -300,7 +300,7 @@ impl FrogxtApplication {
                         let file = gio::File::for_uri(&uri);
                         let filepath = file.path().unwrap_or_default();
                         tracing::info!("Screenshot saved to {}", filepath.display());
-                        app.extract_from_file(filepath.to_str().unwrap_or_default());
+                        app.extract_from_file(filepath.to_str().unwrap_or_default(), false);
                     }
                     Err(err) => {
                         tracing::error!("Failed to take a screenshot: {err}");
@@ -351,7 +351,7 @@ impl FrogxtApplication {
                 .expect("Failed to downcast to FrogWindow")
                 .show_extracted_page();
 
-            self.extract_from_file(filepath.to_str().unwrap_or_default());
+            self.extract_from_file(filepath.to_str().unwrap_or_default(), false);
         }
     }
 
@@ -385,20 +385,21 @@ impl FrogxtApplication {
                         }
 
                         frog_window.show_extracted_page();
-                        app.extract_from_file(path.to_str().unwrap_or_default());
+                        app.extract_from_file(path.to_str().unwrap_or_default(), true);
                     }
                 }
             ),
         );
     }
 
-    fn extract_from_file(&self, path: &str) {
+    fn extract_from_file(&self, path: &str, delete_after: bool) {
         let window = match self.active_window() {
             Some(window) => window.downcast::<FrogWindow>().unwrap(),
             None => return,
         };
 
         let filepath = path.to_string();
+        let delete_after = delete_after;
         let tessdata_path = resolve_tessdata_path();
         tracing::info!("OCR: using tessdata from {tessdata_path}");
 
@@ -417,6 +418,14 @@ impl FrogxtApplication {
                         e.to_string()
                     })?;
                     tracing::info!("OCR: image loaded: {}x{}", img.width(), img.height());
+
+                    if delete_after {
+                        if let Err(e) = std::fs::remove_file(&filepath) {
+                            tracing::warn!("Failed to remove temp image {}: {e}", filepath);
+                        } else {
+                            tracing::info!("Removed temp image {}", filepath);
+                        }
+                    }
 
                     let tessdata_file =
                         std::path::Path::new(&tessdata_path).join("eng.traineddata");
