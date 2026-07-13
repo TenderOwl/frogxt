@@ -33,6 +33,7 @@ mod language_popover_row;
 mod portal;
 mod preferences_dialog;
 mod services;
+mod tray;
 mod welcome_page;
 mod window;
 

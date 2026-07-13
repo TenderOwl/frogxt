@@ -97,8 +97,9 @@ mod imp {
             self.obj()
                 .save_window_size()
                 .expect("Failed to save window state");
-            // Allow to invoke other event handlers
-            glib::Propagation::Proceed
+            // Hide instead of closing so the app stays alive in the tray
+            self.obj().set_visible(false);
+            glib::Propagation::Stop
         }
     }
     impl ApplicationWindowImpl for FrogWindow {}

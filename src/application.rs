@@ -36,10 +36,15 @@ use crate::services::ocr::OcrEngine;
 use crate::FrogWindow;
 
 mod imp {
+    use std::cell::RefCell;
+    use std::sync::mpsc;
+
     use super::*;
 
     #[derive(Debug, Default)]
-    pub struct FrogxtApplication {}
+    pub struct FrogxtApplication {
+        pub tray_rx: RefCell<Option<mpsc::Receiver<crate::tray::TrayMessage>>>,
+    }
 
     #[glib::object_subclass]
     impl ObjectSubclass for FrogxtApplication {
@@ -92,6 +97,43 @@ mod imp {
                         .show_toast("Failed to initalize language models.");
                 })
                 .ok();
+
+            // Spawn tray icon
+            let (tx, rx) = mpsc::channel();
+            self.tray_rx.replace(Some(rx));
+            crate::tray::spawn_tray(tx);
+
+            // Poll tray messages
+            let app = self.obj().clone();
+            glib::timeout_add_local(std::time::Duration::from_millis(100), move || {
+                if let Some(rx) = app.imp().tray_rx.borrow().as_ref() {
+                    while let Ok(msg) = rx.try_recv() {
+                        match msg {
+                            crate::tray::TrayMessage::OpenWindow => {
+                                if let Some(window) = app.active_window() {
+                                    window.set_visible(true);
+                                    window.present();
+                                } else {
+                                    let window = crate::window::FrogWindow::new(
+                                        app.upcast_ref::<gtk::Application>(),
+                                    );
+                                    window.present();
+                                }
+                            }
+                            crate::tray::TrayMessage::GrabScreenshot => {
+                                app.take_screenshot();
+                            }
+                            crate::tray::TrayMessage::OpenFile => {
+                                app.select_file();
+                            }
+                            crate::tray::TrayMessage::Quit => {
+                                app.quit();
+                            }
+                        }
+                    }
+                }
+                glib::ControlFlow::Continue
+            });
         }
     }
 
@@ -370,14 +412,10 @@ impl FrogxtApplication {
                         tracing::error!("Failed to open image: {e}");
                         e.to_string()
                     })?;
-                    tracing::info!(
-                        "OCR: image loaded: {}x{}",
-                        img.width(),
-                        img.height()
-                    );
+                    tracing::info!("OCR: image loaded: {}x{}", img.width(), img.height());
 
-                    let tessdata_file = std::path::Path::new(&tessdata_path)
-                        .join("eng.traineddata");
+                    let tessdata_file =
+                        std::path::Path::new(&tessdata_path).join("eng.traineddata");
                     if !tessdata_file.exists() {
                         tracing::error!(
                             "OCR: tessdata file not found at {}",
@@ -385,7 +423,7 @@ impl FrogxtApplication {
                         );
                     }
 
-                    let engine = OcrEngine::new(&tessdata_path, "eng").map_err(|e| {
+                    let mut engine = OcrEngine::new(&tessdata_path, "eng").map_err(|e| {
                         tracing::error!("Failed to create OCR engine: {e}");
                         e.to_string()
                     })?;
@@ -492,7 +530,10 @@ fn init_tessdata() -> Result<(), ()> {
     tracing::error!(
         "eng.traineddata not found in any candidate path. \
          Searched: {:?}",
-        candidates.iter().map(|p| p.display().to_string()).collect::<Vec<_>>()
+        candidates
+            .iter()
+            .map(|p| p.display().to_string())
+            .collect::<Vec<_>>()
     );
     Err(())
 }

@@ -1,8 +1,9 @@
 use crate::services::preprocess::{preprocess_image, PreprocessConfig, PreprocessError};
 use image::DynamicImage;
+use leptess;
 use once_cell::sync::Lazy;
+use std::io::Cursor;
 use std::sync::{Arc, Mutex};
-use tesseract_rs::TesseractAPI;
 
 /// Ошибки OCR
 #[derive(thiserror::Error, Debug)]
@@ -63,7 +64,7 @@ pub struct OcrResult {
 
 /// Движок OCR на базе tesseract-rs
 pub struct OcrEngine {
-    api: TesseractAPI,
+    api: leptess::LepTess,
     language: String,
     tessdata_dir: String,
 }
@@ -75,20 +76,25 @@ static ENGINE_CACHE: Lazy<Mutex<Vec<(String, Arc<Mutex<OcrEngine>>)>>> =
 impl OcrEngine {
     /// Создать новый движок
     pub fn new(tessdata_dir: &str, language: &str) -> Result<Self, OcrError> {
-        let api = TesseractAPI::new();
-
-        api.init(tessdata_dir, language).map_err(|e| {
+        let mut api = leptess::LepTess::new(Some(tessdata_dir), language).map_err(|e| {
             OcrError::InitError(format!(
                 "Failed to init Tesseract with lang '{}': {}",
                 language, e
             ))
         })?;
 
+        // api.init(tessdata_dir, language).map_err(|e| {
+        //     OcrError::InitError(format!(
+        //         "Failed to init Tesseract with lang '{}': {}",
+        //         language, e
+        //     ))
+        // })?;
+
         // Оптимальные настройки для точности
-        api.set_variable("tessedit_pageseg_mode", "3") // PSM_AUTO
+        api.set_variable(leptess::Variable::TesseditPagesegMode, "3") // PSM_AUTO
             .map_err(|e| OcrError::InitError(e.to_string()))?;
 
-        api.set_variable("tessedit_ocr_engine_mode", "3") // LSTM_ONLY
+        api.set_variable(leptess::Variable::TesseditOcrEngineMode, "3") // LSTM_ONLY
             .map_err(|e| OcrError::InitError(e.to_string()))?;
 
         Ok(Self {
@@ -123,37 +129,37 @@ impl OcrEngine {
     }
 
     /// Установить Page Segmentation Mode
-    pub fn set_psm(&self, mode: i32) -> Result<(), OcrError> {
+    pub fn set_psm(&mut self, mode: i32) -> Result<(), OcrError> {
         self.api
-            .set_variable("tessedit_pageseg_mode", &mode.to_string())
+            .set_variable(leptess::Variable::TesseditPagesegMode, &mode.to_string())
             .map_err(|e| OcrError::InitError(e.to_string()))?;
         Ok(())
     }
 
     /// Установить whitelist символов
-    pub fn set_whitelist(&self, chars: &str) -> Result<(), OcrError> {
+    pub fn set_whitelist(&mut self, chars: &str) -> Result<(), OcrError> {
         self.api
-            .set_variable("tessedit_char_whitelist", chars)
+            .set_variable(leptess::Variable::TesseditCharWhitelist, chars)
             .map_err(|e| OcrError::InitError(e.to_string()))?;
         Ok(())
     }
 
     /// Установить blacklist символов
-    pub fn set_blacklist(&self, chars: &str) -> Result<(), OcrError> {
+    pub fn set_blacklist(&mut self, chars: &str) -> Result<(), OcrError> {
         self.api
-            .set_variable("tessedit_char_blacklist", chars)
+            .set_variable(leptess::Variable::TesseditCharBlacklist, chars)
             .map_err(|e| OcrError::InitError(e.to_string()))?;
         Ok(())
     }
 
     /// Распознать текст из изображения (без агрессивного препроцессинга)
-    pub fn recognize(&self, image: &DynamicImage) -> Result<OcrResult, OcrError> {
+    pub fn recognize(&mut self, image: &DynamicImage) -> Result<OcrResult, OcrError> {
         self.recognize_raw(image)
     }
 
     /// Распознать с кастомным препроцессингом
     pub fn recognize_with_config(
-        &self,
+        &mut self,
         image: &DynamicImage,
         config: &PreprocessConfig,
     ) -> Result<OcrResult, OcrError> {
@@ -161,20 +167,15 @@ impl OcrEngine {
         let preprocessed = preprocess_image(image, config)?;
         let processed = preprocessed.image;
 
-        // Конвертируем в raw bytes для tesseract-rs
-        let luma = processed.to_luma8();
-        let (width, height) = luma.dimensions();
-        let raw = luma.as_raw();
+        // Кодируем в PNG для leptonica (set_image_from_mem ожидает encoded bytes)
+        let mut png_buffer = Vec::new();
+        processed
+            .write_to(&mut Cursor::new(&mut png_buffer), image::ImageFormat::Png)
+            .map_err(|e| OcrError::SetImageError(format!("Failed to encode image to PNG: {e}")))?;
 
         // Устанавливаем изображение
         self.api
-            .set_image(
-                raw,
-                width as i32,
-                height as i32,
-                1,            // bytes per pixel (grayscale = 1)
-                width as i32, // bytes per line
-            )
+            .set_image_from_mem(&png_buffer)
             .map_err(|e| OcrError::SetImageError(e.to_string()))?;
 
         // Получаем текст
@@ -190,15 +191,16 @@ impl OcrEngine {
             .map_err(|e| OcrError::RecognitionError(e.to_string()))?;
 
         // Получаем среднюю уверенность
-        let confidences = self
-            .api
-            .all_word_confidences()
-            .map_err(|e| OcrError::RecognitionError(e.to_string()))?;
-        let confidence = if confidences.is_empty() {
-            0.0
-        } else {
-            confidences.iter().sum::<i32>() as f32 / confidences.len() as f32
-        };
+        let confidence = self.api.mean_text_conf() as f32;
+        // let confidences = self
+        //     .api
+        //     .mean_text_conf()
+        //     .map_err(|e| OcrError::RecognitionError(e.to_string()))?;
+        // let confidence = if confidences.is_empty() {
+        //     0.0
+        // } else {
+        //     confidences.iter().sum::<i32>() as f32 / confidences.len() as f32
+        // };
 
         // Получаем bounding boxes
         let boxes = self.get_text_boxes()?;
@@ -221,13 +223,14 @@ impl OcrEngine {
     }
 
     /// Распознать без препроцессинга (для уже обработанных изображений)
-    pub fn recognize_raw(&self, image: &DynamicImage) -> Result<OcrResult, OcrError> {
+    pub fn recognize_raw(&mut self, image: &DynamicImage) -> Result<OcrResult, OcrError> {
         let luma = image.to_luma8();
-        let (width, height) = luma.dimensions();
-        let raw = luma.as_raw();
+        let mut png_buffer = Vec::new();
+        luma.write_to(&mut Cursor::new(&mut png_buffer), image::ImageFormat::Png)
+            .map_err(|e| OcrError::SetImageError(format!("Failed to encode image to PNG: {e}")))?;
 
         self.api
-            .set_image(raw, width as i32, height as i32, 1, width as i32)
+            .set_image_from_mem(&png_buffer)
             .map_err(|e| OcrError::SetImageError(e.to_string()))?;
 
         let text = self
@@ -240,15 +243,16 @@ impl OcrEngine {
             .get_hocr_text(0)
             .map_err(|e| OcrError::RecognitionError(e.to_string()))?;
 
-        let confidences = self
-            .api
-            .all_word_confidences()
-            .map_err(|e| OcrError::RecognitionError(e.to_string()))?;
-        let confidence = if confidences.is_empty() {
-            0.0
-        } else {
-            confidences.iter().sum::<i32>() as f32 / confidences.len() as f32
-        };
+        // let confidences = self
+        //     .api
+        //     .all_word_confidences()
+        //     .map_err(|e| OcrError::RecognitionError(e.to_string()))?;
+        // let confidence = if confidences.is_empty() {
+        //     0.0
+        // } else {
+        //     confidences.iter().sum::<i32>() as f32 / confidences.len() as f32
+        // };
+        let confidence = self.api.mean_text_conf() as f32;
 
         let boxes = self.get_text_boxes()?;
         let orientation = self.get_orientation()?;
@@ -267,7 +271,7 @@ impl OcrEngine {
     }
 
     /// Получить bounding boxes для всех уровней
-    fn get_text_boxes(&self) -> Result<Vec<TextBox>, OcrError> {
+    fn get_text_boxes(&mut self) -> Result<Vec<TextBox>, OcrError> {
         // tesseract-rs не предоставляет прямого доступа к iterator API
         // Используем hOCR парсинг для получения координат
         let hocr = self
@@ -287,18 +291,19 @@ impl OcrEngine {
     }
 
     /// Автоопределение языка через OSD
-    pub fn detect_language(&self, image: &DynamicImage) -> Result<String, OcrError> {
+    pub fn detect_language(&mut self, image: &DynamicImage) -> Result<String, OcrError> {
         let luma = image.to_luma8();
-        let (width, height) = luma.dimensions();
-        let raw = luma.as_raw();
+        let mut png_buffer = Vec::new();
+        luma.write_to(&mut Cursor::new(&mut png_buffer), image::ImageFormat::Png)
+            .map_err(|e| OcrError::SetImageError(format!("Failed to encode image to PNG: {e}")))?;
 
         // Временно переключаемся на OSD mode
         self.api
-            .set_variable("tessedit_pageseg_mode", "0") // PSM_OSD_ONLY
+            .set_variable(leptess::Variable::TesseditPagesegMode, "0") // PSM_OSD_ONLY
             .map_err(|e| OcrError::RecognitionError(e.to_string()))?;
 
         self.api
-            .set_image(raw, width as i32, height as i32, 1, width as i32)
+            .set_image_from_mem(&png_buffer)
             .map_err(|e| OcrError::SetImageError(e.to_string()))?;
 
         // Получаем "текст" — в OSD mode это метаданные ориентации
@@ -309,7 +314,7 @@ impl OcrEngine {
 
         // Возвращаем PSM_AUTO
         self.api
-            .set_variable("tessedit_pageseg_mode", "3")
+            .set_variable(leptess::Variable::TesseditPagesegMode, "3")
             .map_err(|e| OcrError::RecognitionError(e.to_string()))?;
 
         // Парсим OSD результат
@@ -318,7 +323,7 @@ impl OcrEngine {
     }
 
     /// Распознать цифры только (whitelist)
-    pub fn recognize_digits(&self, image: &DynamicImage) -> Result<OcrResult, OcrError> {
+    pub fn recognize_digits(&mut self, image: &DynamicImage) -> Result<OcrResult, OcrError> {
         self.set_whitelist("0123456789")?;
         self.set_psm(10)?; // PSM_SINGLE_CHAR или 7 (PSM_SINGLE_LINE)
 
@@ -326,7 +331,7 @@ impl OcrEngine {
 
         // Сбрасываем whitelist
         self.api
-            .set_variable("tessedit_char_whitelist", "")
+            .set_variable(leptess::Variable::TesseditCharWhitelist, "")
             .map_err(|e| OcrError::InitError(e.to_string()))?;
         self.set_psm(3)?;
 
@@ -409,7 +414,7 @@ pub fn recognize_auto(
     let mut best_confidence = 0.0f32;
 
     for lang in available_langs {
-        let engine = OcrEngine::new(tessdata_dir, lang)?;
+        let mut engine = OcrEngine::new(tessdata_dir, lang)?;
 
         match engine.recognize(image) {
             Ok(result) => {
@@ -435,6 +440,6 @@ pub fn recognize_file(
 ) -> Result<OcrResult, OcrError> {
     let image = image::open(path).map_err(|e| OcrError::InvalidImage)?;
 
-    let engine = OcrEngine::new(tessdata_dir, language)?;
+    let mut engine = OcrEngine::new(tessdata_dir, language)?;
     engine.recognize(&image)
 }
