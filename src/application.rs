@@ -392,7 +392,7 @@ impl FrogxtApplication {
         );
     }
 
-    fn extract_from_file(&self, path: &str, delete_after: bool) {
+    pub fn extract_from_file(&self, path: &str, delete_after: bool) {
         let window = match self.active_window() {
             Some(window) => window.downcast::<FrogWindow>().unwrap(),
             None => return,

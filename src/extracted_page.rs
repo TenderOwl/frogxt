@@ -1,5 +1,5 @@
 use adw::subclass::prelude::*;
-use gtk::{glib, prelude::*, subclass::prelude::*, CompositeTemplate};
+use gtk::{gdk, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
 
 mod imp {
 
@@ -36,8 +36,17 @@ mod imp {
         }
     }
 
-    impl ObjectImpl for ExtractedPage {}
-    impl WidgetImpl for ExtractedPage {}
+    impl ObjectImpl for ExtractedPage {
+        fn constructed(&self) {
+            self.parent_constructed();
+            // Disable built-in DnD on the text view so file drops are handled
+            // by the window's drop target instead of inserting file paths.
+            let text_view: &gtk::TextView = self.text_view.as_ref();
+            let noop = gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);
+            noop.connect_drop(|_, _, _, _| true);
+            text_view.add_controller(noop);
+        }
+    }    impl WidgetImpl for ExtractedPage {}
     impl NavigationPageImpl for ExtractedPage {}
 }
 

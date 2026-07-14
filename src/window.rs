@@ -25,8 +25,10 @@
 
 use adw::subclass::prelude::*;
 use gio::Settings;
+use gtk::gdk;
 use gtk::prelude::*;
 use gtk::{gio, glib};
+use gtk::glib::clone;
 
 use crate::config::APP_ID;
 
@@ -88,6 +90,7 @@ mod imp {
             let obj = self.obj();
             obj.setup_settings();
             obj.load_window_size();
+            obj.setup_dnd();
         }
     }
     impl WidgetImpl for FrogWindow {}
@@ -182,5 +185,35 @@ impl FrogWindow {
     pub fn show_extracted_text(&self, text: String) {
         self.imp().extracted_page.set_text(text);
         self.show_extracted_page();
+    }
+
+    fn setup_dnd(&self) {
+        let drop_target = gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);
+
+        let win = self.downgrade();
+        drop_target.connect_drop(move |_, value, _, _| {
+            let Ok(file_list) = value.get::<gdk::FileList>() else {
+                return true;
+            };
+            let files = file_list.files();
+            let Some(file) = files.first() else {
+                return true;
+            };
+            let Some(path) = file.path() else {
+                return true;
+            };
+            let Some(win) = win.upgrade() else {
+                return true;
+            };
+            if let Some(app) = win
+                .application()
+                .and_then(|a| a.downcast::<crate::FrogxtApplication>().ok())
+            {
+                app.extract_from_file(path.to_str().unwrap_or_default(), false);
+            }
+            true
+        });
+
+        self.add_controller(drop_target);
     }
 }
