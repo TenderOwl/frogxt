@@ -1,6 +1,6 @@
 use std::sync::mpsc;
 
-use ksni::TrayMethods;
+use ksni::{Status, TrayMethods};
 use tracing::warn;
 
 pub enum TrayMessage {
@@ -25,6 +25,14 @@ impl ksni::Tray for FrogTray {
 
     fn title(&self) -> String {
         "Frog".into()
+    }
+
+    fn status(&self) -> Status {
+        Status::Active
+    }
+
+    fn activate(&mut self, _x: i32, _y: i32) {
+        let _ = self.sender.send(TrayMessage::OpenWindow);
     }
 
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {

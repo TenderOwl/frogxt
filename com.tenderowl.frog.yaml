@@ -12,6 +12,7 @@ finish-args:
   - "--socket=fallback-x11"
   - "--device=dri"
   - "--socket=wayland"
+  - "--socket=session-bus"
   - "--filesystem=xdg-pictures"
   - "--talk-name=org.gnome.StatusNotifierWatcher"
   - "--talk-name=org.kde.StatusNotifierWatcher"
@@ -42,7 +43,7 @@ modules:
   - name: "frog"
     buildsystem: "meson"
     config-opts:
-      - "-Dprofile=development"
+      - "-Dprofile=default"
     sources:
       - type: "dir"
         path: "."
