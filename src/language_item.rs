@@ -66,4 +66,31 @@ impl LanguageItem {
     pub fn new() -> Self {
         glib::Object::builder().build()
     }
+
+    pub fn with_data(code: &str, title: &str) -> Self {
+        let item = Self::new();
+        item.set_data(code, title);
+        item
+    }
+
+    pub fn set_data(&self, code: &str, title: &str) {
+        let imp = self.imp();
+        *imp.data.borrow_mut() = LanguageItemData::new(title, code, false);
+    }
+
+    pub fn code(&self) -> String {
+        self.imp().data.borrow().code.clone()
+    }
+
+    pub fn title(&self) -> String {
+        self.imp().data.borrow().title.clone()
+    }
+
+    pub fn selected(&self) -> bool {
+        self.imp().data.borrow().selected
+    }
+
+    pub fn set_selected(&self, selected: bool) {
+        self.imp().data.borrow_mut().selected = selected;
+    }
 }

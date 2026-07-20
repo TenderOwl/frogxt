@@ -1,6 +1,6 @@
 using Gtk 4.0;
 
-template $LanguageRow : Overlay {
+template $LanguageRow : Box {
   Box {
     margin-bottom: 6;
     margin-end: 8;
@@ -19,7 +19,7 @@ template $LanguageRow : Overlay {
     Button install_btn {
       icon-name: "folder-download-symbolic";
       tooltip-text: C_("Preferences Language Row", "Install language");
-      clicked => $_on_download();
+      clicked => $on_download() swapped;
 
       styles ["flat"]
     }
@@ -28,7 +28,7 @@ template $LanguageRow : Overlay {
       visible: bind install_btn.visible inverted bidirectional;
       icon-name: "user-trash-symbolic";
       tooltip-text: C_("Preferences Language Row", "Remove language");
-      clicked => $_on_remove();
+      clicked => $on_remove() swapped;
 
       styles ["flat"]
     }

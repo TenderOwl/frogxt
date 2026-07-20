@@ -10,118 +10,148 @@ template $PreferencesLanguagesPage: Adw.PreferencesPage {
   Adw.PreferencesGroup {
     title: _("Languages");
 
-    SearchBar search_bar {
-      show-close-button: true;
+    // [header-suffix]
+    // Button {
+    //   halign: center;
+    //   valign: center;
+    //   icon-name: "list-add-symbolic";
+    //   tooltip-text: _("Add language");
 
-      SearchEntry language_search_entry {
-        margin-start: 4;
-        margin-end: 4;
-        placeholder-text: _("Search Languages…");
-      }
-    }
+    //   styles [
+    //     "flat",
+    //   ]
+    // }
 
-    Adw.Banner banner {
-      title: _("Models location unreachable. Check your internet connection");
-      button-clicked => $on_banner_clicked() swapped;
-      button-label: _("Retry");
-      revealed: false;
-    }
-
-    Revealer revealer {
-      reveal-child: bind search_bar.search-mode-enabled bidirectional inverted;
-
-      Adw.Clamp {
-        maximum-size: 600;
-
-        Box {
-          margin-top: 12;
-          margin-start: 12;
-          margin-end: 12;
-
-          Label caption_label {
-            label: _("Installed languages");
-            hexpand: true;
-            halign: start;
-
-            styles [
-              "heading",
-              "h4",
-            ]
-          }
-
-          Button {
-            icon-name: "list-add-symbolic";
-            tooltip-text: _("Add language");
-            clicked => $on_add_language() swapped;
-
-            styles [
-              "flat",
-            ]
-          }
-        }
-      }
-    }
-
-    ScrolledWindow {
-      vexpand: true;
-      margin-bottom: 12;
-
-      Adw.ClampScrollable {
-        maximum-size: 600;
-
-        Adw.PreferencesGroup languages_list_group {
-          margin-top: 12;
-          margin-start: 12;
-          margin-end: 12;
-          margin-bottom: 12;
-
-          Stack views {
-            vexpand: true;
-
-            StackPage {
-              name: 'languages_state';
-
-              child: ScrolledWindow {
-                ListView list_view {
-                  name: "lang_list";
-                  enable-rubberband: false;
-
-                  model: NoSelection selection {
-                    model: FilterListModel model {
-                      model: Gio.ListStore list_store {
-                        // item-type: typeof<$LanguageItem>;
-                      };
-                    };
-                  };
-
-                  factory: SignalListItemFactory factory {
-                    setup => $on_item_setup() swapped;
-                    bind => $on_item_bind() swapped;
-                  };
-
-                  styles [
-                    "boxed-list",
-                    "card",
-                  ]
-                }
-              };
-            }
-
-            StackPage {
-              name: 'empty_state';
-
-              child: Adw.StatusPage {
-                icon-name: "system-search-symbolic";
-                title: _("No Results Found");
-
-                styles [
-                  "compact",
-                ]
-              };
-            }
-          }
-        }
-      }
+    Adw.ExpanderRow installed_expander_row {
+      title: _("Installed languages");
+      expanded: false;
     }
   }
+
+  Adw.PreferencesGroup languages_list_group {
+    // title: _("Installed languages");
+
+    Adw.ExpanderRow available_expander_row {
+      title: _("Available languages");
+      expanded: false;
+    }
+
+    ListView list_view {
+      visible: false;
+      name: "lang_list";
+      enable-rubberband: false;
+
+      model: NoSelection selection {
+        model: FilterListModel model {
+          model: Gio.ListStore list_store {
+            // item-type: typeof<$LanguageItem>;
+          };
+        };
+      };
+
+      factory: SignalListItemFactory factory {
+        // setup => $on_item_setup() swapped;
+        // bind => $on_item_bind() swapped;
+      };
+
+      styles [
+        "boxed-list",
+        "card",
+      ]
+    }
+  }
+
+  // SearchBar search_bar {
+  //   show-close-button: true;
+  //   SearchEntry language_search_entry {
+  //     margin-start: 4;
+  //     margin-end: 4;
+  //     placeholder-text: _("Search Languages…");
+  //   }
+  // }
+  // Adw.Banner banner {
+  //   title: _("Models location unreachable. Check your internet connection");
+  //   button-clicked => $on_banner_clicked() swapped;
+  //   button-label: _("Retry");
+  //   revealed: false;
+  // }
+  // Revealer revealer {
+  //   reveal-child: bind search_bar.search-mode-enabled bidirectional inverted;
+  //   Adw.Clamp {
+  //     maximum-size: 600;
+  //     Box {
+  //       margin-top: 12;
+  //       margin-start: 12;
+  //       margin-end: 12;
+  //       Label caption_label {
+  //         label: _("Installed languages");
+  //         hexpand: true;
+  //         halign: start;
+  //         styles [
+  //           "heading",
+  //           "h4",
+  //         ]
+  //       }
+  //       Button {
+  //         icon-name: "list-add-symbolic";
+  //         tooltip-text: _("Add language");
+  //         clicked => $on_add_language() swapped;
+  //         styles [
+  //           "flat",
+  //         ]
+  //       }
+  //     }
+  //   }
+  // }
+  // ScrolledWindow {
+  //   vexpand: true;
+  //   margin-bottom: 12;
+  //   Adw.ClampScrollable {
+  //     maximum-size: 600;
+  //     Adw.PreferencesGroup languages_list_group {
+  //       margin-top: 12;
+  //       margin-start: 12;
+  //       margin-end: 12;
+  //       margin-bottom: 12;
+  //       Stack views {
+  //         vexpand: true;
+  //         StackPage {
+  //           name: 'languages_state';
+  //           child: ScrolledWindow {
+  // ListView list_view {
+  //   visible: false;
+  //   name: "lang_list";
+  //   enable-rubberband: false;
+  //   model: NoSelection selection {
+  //     model: FilterListModel model {
+  //       model: Gio.ListStore list_store {
+  //         // item-type: typeof<$LanguageItem>;
+  //       };
+  //     };
+  //   };
+  //   factory: SignalListItemFactory factory {
+  //     // setup => $on_item_setup() swapped;
+  //     // bind => $on_item_bind() swapped;
+  //   };
+  //   styles [
+  //     "boxed-list",
+  //     "card",
+  //   ]
+  // }
+  //           };
+  //         }
+  //         StackPage {
+  //           name: 'empty_state';
+  //           child: Adw.StatusPage {
+  //             icon-name: "system-search-symbolic";
+  //             title: _("No Results Found");
+  //             styles [
+  //               "compact",
+  //             ]
+  //           };
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 }

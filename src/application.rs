@@ -484,10 +484,13 @@ async fn wait_until_window_hidden(window: &gtk::Window) {
     glib::timeout_future(std::time::Duration::from_millis(200)).await;
 }
 
-fn resolve_tessdata_path() -> String {
-    let home = std::env::var("HOME").unwrap_or_default();
+pub fn resolve_tessdata_path() -> String {
+    // let home = std::env::var("HOME").unwrap_or_default();
     let candidates: Vec<std::path::PathBuf> = vec![
-        std::path::PathBuf::from(format!("{}/.tesseract-rs/tessdata", home)),
+        std::path::PathBuf::from(format!(
+            "{}/tessdata",
+            std::env::var("XDG_DATA_HOME").unwrap_or_default()
+        )),
         glib::user_data_dir().join("tessdata"),
         std::path::PathBuf::from("/app/share/appdata/tessdata"),
         std::path::PathBuf::from("data/tessdata"),
