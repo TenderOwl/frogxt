@@ -429,11 +429,11 @@ impl FrogxtApplication {
                     }
 
                     let active_lang = {
-                        let lm = crate::language_manager::LanguageManager::instance();
-                        lm.get_active_language().code().to_string()
+                        let settings = gio::Settings::new(crate::config::APP_ID);
+                        settings.string("active-language").to_string()
                     };
-                    let tessdata_file =
-                        std::path::Path::new(&tessdata_path).join(format!("{}.traineddata", &active_lang));
+                    let tessdata_file = std::path::Path::new(&tessdata_path)
+                        .join(format!("{}.traineddata", &active_lang));
                     if !tessdata_file.exists() {
                         tracing::error!(
                             "OCR: tessdata file not found at {}",
@@ -452,9 +452,10 @@ impl FrogxtApplication {
                     })?;
 
                     tracing::info!(
-                        "OCR complete: {} words, {:.1}% confidence",
+                        "OCR complete: {} words, {:.1}% confidence, language: {}",
                         ocr_result.word_count,
-                        ocr_result.confidence
+                        ocr_result.confidence,
+                        ocr_result.language
                     );
 
                     Ok(ocr_result.text)

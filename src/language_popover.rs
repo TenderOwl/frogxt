@@ -16,8 +16,8 @@ mod imp {
     pub struct LanguagePopover {
         #[template_child]
         pub views: TemplateChild<gtk::Stack>,
-        #[template_child]
-        pub search_box: TemplateChild<gtk::Box>,
+        // #[template_child]
+        // pub search_box: TemplateChild<gtk::Box>,
         #[template_child]
         pub entry: TemplateChild<gtk::SearchEntry>,
         #[template_child]
@@ -87,13 +87,15 @@ mod imp {
         }
 
         #[template_callback]
-        fn on_language_activate(&self, row: &LanguagePopoverRow) {
-            if let Some(item) = row.item() {
-                self.obj().set_active_language_code(&item.code());
-                let lm = LanguageManager::instance();
-                lm.set_active_language(&item);
-                self.obj().emit_language_changed(&item);
-                self.obj().popdown();
+        fn on_language_activate(&self, row: &gtk::ListBoxRow) {
+            if let Some(popover_row) = row.downcast_ref::<LanguagePopoverRow>() {
+                if let Some(item) = popover_row.item() {
+                    self.obj().set_active_language_code(&item.code());
+                    let lm = LanguageManager::instance();
+                    lm.set_active_language(&item);
+                    self.obj().emit_language_changed(&item);
+                    self.obj().popdown();
+                }
             }
         }
 
