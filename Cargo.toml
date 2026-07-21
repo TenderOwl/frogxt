@@ -19,7 +19,9 @@ once_cell = "1.21"
 regex = "1.12"
 leptess = "0.14.0"
 rqrr = "0.10"
+posthog-rs = { version = "0.14", default-features = false }
 reqwest = { version = "0.12", features = ["blocking"] }
+nanoid = "0.4"
 
 [dependencies.adw]
 package = "libadwaita"

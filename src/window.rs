@@ -174,10 +174,12 @@ impl FrogWindow {
     }
 
     pub fn show_extracted_page(&self) {
+        crate::telemetry::capture_page_view("extracted");
         self.imp().split_view.set_show_content(true);
     }
 
     pub fn show_welcome_page(&self) {
+        crate::telemetry::capture_page_view("welcome");
         self.imp().split_view.set_show_content(false);
     }
 

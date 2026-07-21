@@ -81,6 +81,25 @@ mod imp {
         fn startup(&self) {
             self.parent_startup();
 
+            // Initialize telemetry
+            crate::telemetry::init();
+
+            // Listen for telemetry setting changes
+            let settings = gio::Settings::new(crate::config::APP_ID);
+            settings.connect_local("changed", false, move |values| {
+                let key = values[1].get::<String>().unwrap_or_default();
+                if key == "telemetry" {
+                    let settings = gio::Settings::new(crate::config::APP_ID);
+                    let active = settings.boolean("telemetry");
+                    if active {
+                        crate::telemetry::capture("telemetry activated");
+                    } else {
+                        crate::telemetry::capture("telemetry deactivated");
+                    }
+                }
+                None
+            });
+
             let provider = gtk::CssProvider::new();
             provider.load_from_resource("/com/tenderowl/frog/general.css");
             gtk::style_context_add_provider_for_display(
@@ -158,20 +177,32 @@ impl FrogxtApplication {
 
     fn setup_gactions(&self) {
         let prefs_action = gio::ActionEntry::builder("preferences")
-            .activate(move |app: &Self, _, _| app.show_preferences())
+            .activate(move |app: &Self, _, _| {
+                crate::telemetry::capture("preferences activated");
+                app.show_preferences()
+            })
             .build();
 
         // Quit
         let quit_action = gio::ActionEntry::builder("quit")
-            .activate(move |app: &Self, _, _| app.quit())
+            .activate(move |app: &Self, _, _| {
+                crate::telemetry::shutdown();
+                app.quit()
+            })
             .build();
         // About
         let about_action = gio::ActionEntry::builder("about")
-            .activate(move |app: &Self, _, _| app.show_about())
+            .activate(move |app: &Self, _, _| {
+                crate::telemetry::capture("about activated");
+                app.show_about()
+            })
             .build();
         // GitHub Star
         let github_star_action = gio::ActionEntry::builder("github_star")
-            .activate(move |app: &Self, _, _| app.github_star())
+            .activate(move |app: &Self, _, _| {
+                crate::telemetry::capture("star github activated");
+                app.github_star()
+            })
             .build();
         // Toast
         let toast_action = gio::ActionEntry::builder("toast")
@@ -184,15 +215,24 @@ impl FrogxtApplication {
             .build();
         // Take Screenshot
         let screenshot_action = gio::ActionEntry::builder("screenshot")
-            .activate(move |app: &Self, _, _| app.take_screenshot())
+            .activate(move |app: &Self, _, _| {
+                crate::telemetry::capture("screenshot activated");
+                app.take_screenshot()
+            })
             .build();
 
         let open_image_action = gio::ActionEntry::builder("open-file")
-            .activate(move |app: &Self, _, _| app.select_file())
+            .activate(move |app: &Self, _, _| {
+                crate::telemetry::capture("open_image activated");
+                app.select_file()
+            })
             .build();
 
         let paste_from_clipboard_action = gio::ActionEntry::builder("paste-from-clipboard")
-            .activate(move |app: &Self, _, _| app.paste_from_clipboard())
+            .activate(move |app: &Self, _, _| {
+                crate::telemetry::capture("paste_from_clipboard activated");
+                app.paste_from_clipboard()
+            })
             .build();
 
         // Set keyboard shortcusts

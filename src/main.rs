@@ -35,6 +35,7 @@ mod language_row;
 mod portal;
 mod preferences_dialog;
 mod services;
+mod telemetry;
 mod tray;
 mod welcome_page;
 mod window;

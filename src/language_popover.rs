@@ -90,6 +90,10 @@ mod imp {
         fn on_language_activate(&self, row: &gtk::ListBoxRow) {
             if let Some(popover_row) = row.downcast_ref::<LanguagePopoverRow>() {
                 if let Some(item) = popover_row.item() {
+                    crate::telemetry::capture_with_props(
+                        "language",
+                        &[("language", &item.code().as_str())],
+                    );
                     self.obj().set_active_language_code(&item.code());
                     let lm = LanguageManager::instance();
                     lm.set_active_language(&item);
