@@ -13,6 +13,7 @@ finish-args:
   - "--device=dri"
   - "--socket=wayland"
   - "--socket=session-bus"
+  - "--filesystem=xdg-run/gvfsd"
   - "--filesystem=xdg-pictures"
   - "--talk-name=org.gnome.StatusNotifierWatcher"
   - "--talk-name=org.kde.StatusNotifierWatcher"

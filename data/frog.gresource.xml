@@ -3,7 +3,7 @@
   <gresource prefix="/com/tenderowl/frog">
     <file preprocess="xml-stripblanks">ui/window.ui</file>
     <file preprocess="xml-stripblanks">ui/welcome-page.ui</file>
-    <file preprocess="xml-stripblanks">ui/shortcuts-dialog.ui</file>
+    <file preprocess="xml-stripblanks" alias="shortcuts-dialog.ui">ui/shortcuts-dialog.ui</file>
     <file preprocess="xml-stripblanks">ui/extracted-page.ui</file>
     <file preprocess="xml-stripblanks">ui/language-popover.ui</file>
     <file preprocess="xml-stripblanks">ui/language-popover_row.ui</file>
