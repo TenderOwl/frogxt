@@ -2,13 +2,14 @@ using Gtk 4.0;
 
 template $LanguagePopover : Popover {
 
-  show => $_on_popover_show();
-  closed => $_on_popover_closed();
+  show => $on_popover_show() swapped;
+  closed => $on_popover_closed() swapped;
+  // notify::visible => $on_visible_changed();
+
   styles ["lang-selector","menu"]
 
   Box {
     orientation: vertical;
-
 
     Box search_box {
       orientation: vertical;
@@ -17,9 +18,8 @@ template $LanguagePopover : Popover {
       SearchEntry entry {
 
         placeholder-text: _("Search Languages…");
-        activate => $_on_search_activate();
-        search-changed => $_on_search_changed();
-        stop-search => $_on_stop_search();
+        search-changed => $on_search_changed() swapped;
+        stop-search => $on_stop_search() swapped;
       }
     }
 
@@ -37,7 +37,7 @@ template $LanguagePopover : Popover {
 
           ListBox list_view {
             selection-mode: single;
-            row-activated => $_on_language_activate();
+            row-activated => $on_language_activate() swapped;
           }
         };
       }
@@ -73,7 +73,7 @@ template $LanguagePopover : Popover {
               margin-top: 8;
               hexpand: true;
               label: _("Add Language");
-              clicked => $_on_add_clicked();
+              clicked => $on_add_clicked() swapped;
             }
           }
         };

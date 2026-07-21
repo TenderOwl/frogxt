@@ -1,7 +1,9 @@
-use image::{DynamicImage, GrayImage, ImageBuffer, Luma, Rgba};
-use imageproc::contrast::adaptive_threshold;
-use imageproc::filter::median_filter;
-use imageproc::geometric_transformations::{rotate_about_center, Interpolation};
+use imageproc::{
+    contrast::adaptive_threshold,
+    filter::median_filter,
+    geometric_transformations::{rotate_about_center, Interpolation},
+    image::{self, DynamicImage, GrayImage, ImageBuffer, Luma, Rgba},
+};
 use std::f32::consts::PI;
 
 /// Ошибки препроцессинга

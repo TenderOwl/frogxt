@@ -1,5 +1,5 @@
 use adw::subclass::prelude::*;
-use gtk::{gdk, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
+use gtk::{gdk, glib, prelude::*};
 
 mod imp {
 
@@ -46,7 +46,8 @@ mod imp {
             noop.connect_drop(|_, _, _, _| true);
             text_view.add_controller(noop);
         }
-    }    impl WidgetImpl for ExtractedPage {}
+    }
+    impl WidgetImpl for ExtractedPage {}
     impl NavigationPageImpl for ExtractedPage {}
 }
 

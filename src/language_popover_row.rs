@@ -1,21 +1,24 @@
-use adw::subclass::prelude::*;
-use gtk::{gio, glib, prelude::*, subclass::prelude::*, CompositeTemplate};
+use gtk::glib;
+use gtk::prelude::*;
+use gtk::subclass::prelude::*;
+use gtk::CompositeTemplate;
+
+use crate::language_item::LanguageItem;
 
 mod imp {
-
-    use crate::language_item::LanguageItem;
+    use std::cell::RefCell;
 
     use super::*;
 
-    #[derive(Debug, Default, gtk::CompositeTemplate)]
-    #[template(resource = "/com/tenderowl/frog/ui/language-popover.ui")]
+    #[derive(Debug, Default, CompositeTemplate)]
+    #[template(resource = "/com/tenderowl/frog/ui/language-popover_row.ui")]
     pub struct LanguagePopoverRow {
         #[template_child]
         pub title: TemplateChild<gtk::Label>,
         #[template_child]
         pub selection: TemplateChild<gtk::Image>,
 
-        pub filter: Option<LanguageItem>,
+        pub item: RefCell<Option<LanguageItem>>,
     }
 
     #[glib::object_subclass]
@@ -47,5 +50,15 @@ glib::wrapper! {
 impl LanguagePopoverRow {
     pub fn new() -> Self {
         glib::Object::builder().build()
+    }
+
+    pub fn set_item(&self, item: &LanguageItem) {
+        self.imp().item.borrow_mut().replace(item.clone());
+        self.imp().title.set_label(&item.title());
+        self.imp().selection.set_visible(item.selected());
+    }
+
+    pub fn item(&self) -> Option<LanguageItem> {
+        self.imp().item.borrow().clone()
     }
 }

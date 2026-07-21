@@ -28,15 +28,17 @@ use gio::Settings;
 use gtk::gdk;
 use gtk::prelude::*;
 use gtk::{gio, glib};
-use gtk::glib::clone;
 
 use crate::config::APP_ID;
+use crate::language_manager::LanguageManager;
 
 mod imp {
     use std::cell::OnceCell;
 
     use crate::{
-        extracted_page::ExtractedPage, language_popover::LanguagePopover, welcome_page::WelcomePage,
+        extracted_page::ExtractedPage,
+        language_popover::LanguagePopover,
+        welcome_page::WelcomePage,
     };
 
     use super::*;
@@ -91,6 +93,7 @@ mod imp {
             obj.setup_settings();
             obj.load_window_size();
             obj.setup_dnd();
+            obj.setup_language_popover();
         }
     }
     impl WidgetImpl for FrogWindow {}
@@ -215,5 +218,36 @@ impl FrogWindow {
         });
 
         self.add_controller(drop_target);
+    }
+
+    fn setup_language_popover(&self) {
+        let imp = self.imp();
+
+        // Set initial active language from settings
+        let settings = self.settings();
+        let active_code = settings.string("active-language").to_string();
+        imp.language_popover.set_active_language_code(&active_code);
+
+        // Set initial label
+        let lm = LanguageManager::instance();
+        if let Some(item) = lm.get_language_item(&active_code) {
+            imp.lang_combo.set_label(&item.title());
+        } else if let Some(item) = lm.get_language_item("eng") {
+            imp.lang_combo.set_label(&item.title());
+        }
+
+        // Connect to language-changed signal
+        let win = self.downgrade();
+        imp.language_popover
+            .connect_language_changed(move |_popover, item| {
+                if let Some(win) = win.upgrade() {
+                    win.imp().lang_combo.set_label(&item.title());
+
+                    // Persist the selection
+                    if let Some(settings) = win.imp().settings.get() {
+                        let _ = settings.set_string("active-language", &item.code());
+                    }
+                }
+            });
     }
 }

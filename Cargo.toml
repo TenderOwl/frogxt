@@ -8,7 +8,6 @@ ashpd = { version = "=0.13.11", features = ["screenshot", "gtk4", "tracing", "to
 ksni = "0.3"
 gettext-rs = { version = "0.7", features = ["gettext-system"] }
 gtk = { version = "0.11", package = "gtk4", features = ["gnome_50"] }
-image = "0.25"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync"] }

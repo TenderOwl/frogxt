@@ -964,7 +964,6 @@ dependencies = [
  "ashpd",
  "gettext-rs",
  "gtk4",
- "image",
  "imageproc",
  "ksni",
  "leptess",

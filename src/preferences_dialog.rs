@@ -23,16 +23,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-use adw::prelude::PreferencesDialogExt;
 use adw::subclass::prelude::*;
 // use gio::Settings;
 use gtk::glib;
-use gtk::prelude::*;
-
-use std::cell::OnceCell;
-
-use crate::preferences_dialog::general_page::PreferencesGeneralPage;
-use crate::preferences_dialog::languages_page::PreferencesLanguagesPage;
 
 mod general_page;
 mod languages_page;

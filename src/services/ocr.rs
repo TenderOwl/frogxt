@@ -1,5 +1,5 @@
 use crate::services::preprocess::{preprocess_image, PreprocessConfig, PreprocessError};
-use image::DynamicImage;
+use imageproc::image::{self, DynamicImage};
 use leptess;
 use once_cell::sync::Lazy;
 use std::io::Cursor;

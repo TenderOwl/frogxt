@@ -28,6 +28,7 @@ use ashpd::WindowIdentifier;
 use gettextrs::gettext;
 use gtk::glib::clone;
 use gtk::{gdk, gio, glib};
+use imageproc::image;
 
 use crate::config::VERSION;
 use crate::services::ocr::OcrEngine;

@@ -2,9 +2,9 @@ id: "com.tenderowl.frog"
 runtime: "org.gnome.Platform"
 runtime-version: "50"
 sdk: "org.gnome.Sdk"
-sdk-extensions:
-  - "org.freedesktop.Sdk.Extension.rust-stable"
-  - "org.freedesktop.Sdk.Extension.llvm22"
+# sdk-extensions:
+#   - "org.freedesktop.Sdk.Extension.rust-stable"
+  # - "org.freedesktop.Sdk.Extension.llvm22"
 command: "frog"
 finish-args:
   - "--share=network"
@@ -17,7 +17,7 @@ finish-args:
   - "--talk-name=org.gnome.StatusNotifierWatcher"
   - "--talk-name=org.kde.StatusNotifierWatcher"
 build-options:
-  append-path: "/usr/lib/sdk/rust-stable/bin"
+  append-path: "/usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm22/bin"
   prepend-path: "/usr/lib/sdk/llvm22/bin"
   prepend-ld-library-path: "/usr/lib/sdk/llvm22/lib"
   build-args:
@@ -27,6 +27,11 @@ build-options:
     RUST_LOG: "frog=debug"
     RUSTC_WRAPPER: "ccache"
     TESSERACT_EMBED_LANGUAGES: "eng"
+    CARGO_REGISTRIES_CRATES_IO_PROTOCOL": "sparse"
+    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER": "clang"
+    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS": "-C link-arg=-fuse-ld=/usr/lib/sdk/rust-stable/bin/mold"
+    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER": "clang"
+    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_RUSTFLAGS": "-C link-arg=-fuse-ld=/usr/lib/sdk/rust-stable/bin/mold"
 cleanup:
   - "/include"
   - "/lib/pkgconfig"
