@@ -188,6 +188,14 @@ impl FrogWindow {
     }
 
     pub fn show_extracted_text(&self, text: String) {
+        let settings = self.settings();
+        if settings.boolean("autocopy") {
+            if let Some(display) = gdk::Display::default() {
+                let clipboard = display.clipboard();
+                clipboard.set_text(&text);
+                self.show_toast("Text copied to clipboard");
+            }
+        }
         self.imp().extracted_page.set_text(text);
         self.show_extracted_page();
         self.handle_extracted_urls();
