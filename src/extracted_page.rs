@@ -77,7 +77,9 @@ mod imp {
                     end.forward_to_tag_toggle(Some(&link_tag));
                     let url = buffer_clone.text(&start, &end, false).to_string();
                     let launcher = gtk::UriLauncher::new(&url);
-                    let widget = text_view_clone.root().and_then(|r| r.downcast::<gtk::Window>().ok());
+                    let widget = text_view_clone
+                        .root()
+                        .and_then(|r| r.downcast::<gtk::Window>().ok());
                     launcher.launch(widget.as_ref(), gtk::gio::Cancellable::NONE, |result| {
                         if let Err(e) = result {
                             tracing::error!("Failed to open URL: {e}");
