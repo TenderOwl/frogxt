@@ -1,8 +1,6 @@
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use gtk::glib;
-use gtk::gio;
-use gtk::{CompositeTemplate, StringList};
+use gtk::{gio, glib, CompositeTemplate, StringList};
 
 use crate::config::APP_ID;
 use crate::language_manager::LanguageManager;
@@ -65,11 +63,11 @@ impl PreferencesGeneralPage {
 
         // Bind switches to settings
         let switch_ref: &adw::SwitchRow = imp.autocopy_switch.as_ref();
-        settings.bind("autocopy", switch_ref, "active");
+        settings.bind("autocopy", switch_ref, "active").build();
         let switch_ref: &adw::SwitchRow = imp.autolinks_switch.as_ref();
-        settings.bind("autolinks", switch_ref, "active");
+        settings.bind("autolinks", switch_ref, "active").build();
         let switch_ref: &adw::SwitchRow = imp.telemetry_switch.as_ref();
-        settings.bind("telemetry", switch_ref, "active");
+        settings.bind("telemetry", switch_ref, "active").build();
 
         // Populate extra language combo with installed languages
         let lm = LanguageManager::instance();
@@ -89,13 +87,14 @@ impl PreferencesGeneralPage {
         // Save extra language on change
         let combo = imp.extra_language_combo.clone();
         let codes = downloaded_codes.clone();
-        imp.extra_language_combo.connect_notify_local(Some("selected"), move |_, _| {
-            let idx = combo.selected() as usize;
-            if let Some(code) = codes.get(idx) {
-                let settings = gio::Settings::new(APP_ID);
-                let _ = settings.set_string("extra-language", code);
-            }
-        });
+        imp.extra_language_combo
+            .connect_notify_local(Some("selected"), move |_, _| {
+                let idx = combo.selected() as usize;
+                if let Some(code) = codes.get(idx) {
+                    let settings = gio::Settings::new(APP_ID);
+                    let _ = settings.set_string("extra-language", code);
+                }
+            });
 
         // Refresh combo when languages are downloaded or removed
         let obj_weak = self.downgrade();

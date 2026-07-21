@@ -10,7 +10,14 @@ const POSTHOG_HOST: &str = "https://eu.posthog.com";
 
 static CLIENT: OnceLock<posthog_rs::Client> = OnceLock::new();
 
-fn get_client() -> Option<&'static posthog_rs::Client> {
+fn ensure_client() -> Option<&'static posthog_rs::Client> {
+    if let Some(client) = CLIENT.get() {
+        return Some(client);
+    }
+
+    let options = posthog_rs::ClientOptions::from((POSTHOG_API_KEY, POSTHOG_HOST));
+    let client = posthog_rs::client(options);
+    CLIENT.set(client).ok();
     CLIENT.get()
 }
 
@@ -29,29 +36,17 @@ fn ensure_installation_id() -> String {
 }
 
 pub fn init() {
-    let settings = gio::Settings::new(APP_ID);
-    let installation_id = ensure_installation_id();
-    let is_active = settings.boolean("telemetry");
-
-    if !is_active {
-        tracing::debug!("Telemetry disabled");
-        return;
-    }
-
-    let options = posthog_rs::ClientOptions::from((POSTHOG_API_KEY, POSTHOG_HOST));
-    let client = posthog_rs::client(options);
-    let _ = CLIENT.set(client);
-    tracing::debug!("PostHog client initialized for {}", installation_id);
+    ensure_installation_id();
 }
 
 pub fn flush() {
-    if let Some(client) = get_client() {
+    if let Some(client) = CLIENT.get() {
         client.flush();
     }
 }
 
 pub fn shutdown() {
-    if let Some(client) = get_client() {
+    if let Some(client) = CLIENT.get() {
         client.shutdown();
     }
 }
@@ -76,7 +71,7 @@ pub fn capture_with_props(event: &str, props: &[(&str, &dyn ToPostHogProp)]) {
     if !is_enabled() {
         return;
     }
-    let Some(client) = get_client() else {
+    let Some(client) = ensure_client() else {
         return;
     };
 
