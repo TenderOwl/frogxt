@@ -428,10 +428,19 @@ impl FrogxtApplication {
                         }
                     }
 
-                    let active_lang = {
+                    let (active_lang, extra_lang) = {
                         let settings = gio::Settings::new(crate::config::APP_ID);
-                        settings.string("active-language").to_string()
+                        let active = settings.string("active-language").to_string();
+                        let extra = settings.string("extra-language").to_string();
+                        (active, extra)
                     };
+
+                    let ocr_lang = if extra_lang.is_empty() || extra_lang == active_lang {
+                        active_lang.clone()
+                    } else {
+                        format!("{}+{}", active_lang, extra_lang)
+                    };
+
                     let tessdata_file = std::path::Path::new(&tessdata_path)
                         .join(format!("{}.traineddata", &active_lang));
                     if !tessdata_file.exists() {
@@ -441,7 +450,7 @@ impl FrogxtApplication {
                         );
                     }
 
-                    let mut engine = OcrEngine::new(&tessdata_path, &active_lang).map_err(|e| {
+                    let mut engine = OcrEngine::new(&tessdata_path, &ocr_lang).map_err(|e| {
                         tracing::error!("Failed to create OCR engine: {e}");
                         e.to_string()
                     })?;
