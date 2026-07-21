@@ -89,6 +89,7 @@ mod imp {
         #[template_callback]
         fn on_language_activate(&self, row: &LanguagePopoverRow) {
             if let Some(item) = row.item() {
+                self.obj().set_active_language_code(&item.code());
                 let lm = LanguageManager::instance();
                 lm.set_active_language(&item);
                 self.obj().emit_language_changed(&item);

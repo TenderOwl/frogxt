@@ -428,8 +428,12 @@ impl FrogxtApplication {
                         }
                     }
 
+                    let active_lang = {
+                        let lm = crate::language_manager::LanguageManager::instance();
+                        lm.get_active_language().code().to_string()
+                    };
                     let tessdata_file =
-                        std::path::Path::new(&tessdata_path).join("eng.traineddata");
+                        std::path::Path::new(&tessdata_path).join(format!("{}.traineddata", &active_lang));
                     if !tessdata_file.exists() {
                         tracing::error!(
                             "OCR: tessdata file not found at {}",
@@ -437,7 +441,7 @@ impl FrogxtApplication {
                         );
                     }
 
-                    let mut engine = OcrEngine::new(&tessdata_path, "eng").map_err(|e| {
+                    let mut engine = OcrEngine::new(&tessdata_path, &active_lang).map_err(|e| {
                         tracing::error!("Failed to create OCR engine: {e}");
                         e.to_string()
                     })?;

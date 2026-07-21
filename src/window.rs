@@ -226,13 +226,15 @@ impl FrogWindow {
         // Set initial active language from settings
         let settings = self.settings();
         let active_code = settings.string("active-language").to_string();
-        imp.language_popover.set_active_language_code(&active_code);
 
-        // Set initial label
         let lm = LanguageManager::instance();
         if let Some(item) = lm.get_language_item(&active_code) {
+            lm.set_active_language(&item);
+            imp.language_popover.set_active_language_code(&active_code);
             imp.lang_combo.set_label(&item.title());
         } else if let Some(item) = lm.get_language_item("eng") {
+            lm.set_active_language(&item);
+            imp.language_popover.set_active_language_code("eng");
             imp.lang_combo.set_label(&item.title());
         }
 
