@@ -188,6 +188,62 @@ impl FrogWindow {
     pub fn show_extracted_text(&self, text: String) {
         self.imp().extracted_page.set_text(text);
         self.show_extracted_page();
+        self.handle_extracted_urls();
+    }
+
+    fn handle_extracted_urls(&self) {
+        let imp = self.imp();
+        let urls = imp.extracted_page.urls();
+
+        if urls.is_empty() {
+            return;
+        }
+
+        let settings = self.settings();
+        let autolinks = settings.boolean("autolinks");
+
+        if autolinks {
+            // Auto-open the first URL
+            if let Some(url) = urls.first() {
+                tracing::info!("Auto-opening URL: {url}");
+                let launcher = gtk::UriLauncher::new(url);
+                let window_weak = self.downgrade();
+                launcher.launch(
+                    Some(self),
+                    gtk::gio::Cancellable::NONE,
+                    move |result| {
+                        if let Err(e) = result {
+                            tracing::error!("Failed to open URL: {e}");
+                            if let Some(w) = window_weak.upgrade() {
+                                w.show_toast("Failed to open URL");
+                            }
+                        } else if let Some(w) = window_weak.upgrade() {
+                            w.show_toast("QR-code URL opened");
+                        }
+                    },
+                );
+            }
+        } else {
+            // Show toast with "Open" button
+            let toast = adw::Toast::new("QR-code contains URL.");
+            toast.set_button_label(Some("Open"));
+            toast.set_priority(adw::ToastPriority::High);
+
+            if let Some(url) = urls.first() {
+                let url = url.clone();
+                let win = self.clone();
+                toast.connect_button_clicked(move |_toast| {
+                    let launcher = gtk::UriLauncher::new(&url);
+                    launcher.launch(Some(&win), gtk::gio::Cancellable::NONE, |result| {
+                        if let Err(e) = result {
+                            tracing::error!("Failed to open URL: {e}");
+                        }
+                    });
+                });
+            }
+
+            imp.toast_overlay.add_toast(toast);
+        }
     }
 
     fn setup_dnd(&self) {

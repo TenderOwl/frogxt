@@ -420,6 +420,14 @@ impl FrogxtApplication {
                     })?;
                     tracing::info!("OCR: image loaded: {}x{}", img.width(), img.height());
 
+                    // Try QR code detection first
+                    let qr_result = try_decode_qr(&img);
+                    if let Some(text) = qr_result {
+                        tracing::info!("QR code detected: {}", text);
+                        return Ok(text);
+                    }
+                    tracing::info!("No QR code found, falling back to OCR");
+
                     if delete_after {
                         if let Err(e) = std::fs::remove_file(&filepath) {
                             tracing::warn!("Failed to remove temp image {}: {e}", filepath);
@@ -488,6 +496,18 @@ impl FrogxtApplication {
             }
         ));
     }
+}
+
+fn try_decode_qr(img: &imageproc::image::DynamicImage) -> Option<String> {
+    let luma = img.to_luma8();
+    let mut prepared = rqrr::PreparedImage::prepare(luma);
+    let grids = prepared.detect_grids();
+    for grid in grids {
+        if let Ok((_meta, content)) = grid.decode() {
+            return Some(content);
+        }
+    }
+    None
 }
 
 async fn wait_until_window_hidden(window: &gtk::Window) {
