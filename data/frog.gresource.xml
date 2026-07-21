@@ -19,6 +19,7 @@
     <file>icons/scalable/actions/share-symbolic.svg</file>
     <file>icons/scalable/actions/languages-symbolic.svg</file>
     <file>icons/scalable/actions/preferences-symbolic.svg</file>
+    <file>icons/scalable/actions/search-symbolic.svg</file>
     <file>general.css</file>
   </gresource>
 </gresources>
